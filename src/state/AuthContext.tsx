@@ -18,16 +18,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true
-    void supabase.auth.getSession().then(({ data }) => {
-      if (active) {
-        setSession(data.session)
-        setLoading(false)
-      }
-    })
+    let authEventHandled = false
 
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!active) return
+      authEventHandled = true
       setSession(nextSession)
       setLoading(false)
+    })
+
+    void supabase.auth.getSession().then(({ data: sessionData }) => {
+      if (active && !authEventHandled) {
+        setSession(sessionData.session)
+        setLoading(false)
+      }
     })
 
     return () => {
@@ -42,8 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       loading,
       async signIn(email, password) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw new Error(error.message)
+        setSession(data.session)
+        setLoading(false)
       },
       async signOut() {
         const { error } = await supabase.auth.signOut()
