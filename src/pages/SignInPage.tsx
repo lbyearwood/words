@@ -38,7 +38,6 @@ export function SignInPage() {
       <section className="sign-in-panel" aria-labelledby="sign-in-title">
         <div className="lock-icon"><LockKeyhole aria-hidden="true" /></div>
         <h2 id="sign-in-title">Welcome back</h2>
-        <p>Private access for Max and Tia.</p>
         <form onSubmit={handleSubmit}>
           <label>
             Email
