@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "release": "2025-plus",
+  "batch_number": 432,
+  "items": [
+    {
+      "synset_id": "02506148-n",
+      "source_sense_key": "elephant%1:05:00::",
+      "status": "approved",
+      "learner_title": "Elephant (animal)",
+      "plain_english_definition": "A very large land mammal with a trunk, tusks and thick skin.",
+      "natural_example": "The elephant used its trunk to lift a branch.",
+      "preferred_term": "elephant",
+      "difficulty": "beginner",
+      "primary_category": "biology_life_sciences",
+      "secondary_categories": [
+        "general_vocabulary"
+      ],
+      "regional_variants": [],
+      "qa_evidence": {
+        "reviewed_by": "Codex",
+        "draft_reviewed": true,
+        "quality_reviewed": true,
+        "notes": "Acceptance fixture: the technical source definition was rewritten for learners and checked against the animal sense."
+      }
+    }
+  ]
+}
