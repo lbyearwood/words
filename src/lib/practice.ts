@@ -69,6 +69,26 @@ function fillOptions(
   return shuffled([correct, ...unique.values()], random)
 }
 
+function promptFor(target: KnowledgeItem, library: KnowledgeItem[], type: QuestionType, shownMeaning?: string) {
+  const senseCount = library.filter((item) => item.term_family_id === target.term_family_id).length
+  const hasSeveralMeanings = senseCount > 1
+  const hasContext = hasSeveralMeanings && target.example_sentence.trim().length > 0
+
+  if (type === 'multiple_choice') {
+    if (hasContext) return `In the sentence “${target.example_sentence}”, what does “${target.term}” mean?`
+    if (hasSeveralMeanings && target.part_of_speech) {
+      return `Which meaning matches “${target.term}” used as a ${target.part_of_speech}?`
+    }
+    return `Which meaning best matches “${target.term}”?`
+  }
+
+  if (hasContext) return `In the sentence “${target.example_sentence}”, “${target.term}” means “${shownMeaning}”.`
+  if (hasSeveralMeanings && target.part_of_speech) {
+    return `Used as a ${target.part_of_speech}, “${target.term}” means “${shownMeaning}”.`
+  }
+  return `“${target.term}” means “${shownMeaning}”`
+}
+
 export function buildPracticeQuestions(
   targets: KnowledgeItem[],
   library: KnowledgeItem[],
@@ -76,7 +96,7 @@ export function buildPracticeQuestions(
   seed: string,
 ): PracticeQuestion[] {
   const random = randomFromSeed(seed)
-  const uniqueTargets = [...new Map(targets.map((item) => [item.id, item])).values()]
+  const uniqueTargets = [...new Map(targets.map((item) => [item.term_family_id || item.id, item])).values()]
   const selected = shuffled(uniqueTargets, random).slice(0, Math.min(requestedCount, uniqueTargets.length))
   const types: QuestionType[] = ['multiple_choice', 'true_false']
 
@@ -94,7 +114,7 @@ export function buildPracticeQuestions(
         knowledge_item_id: target.id,
         position: index + 1,
         question_type: type,
-        prompt: `“${target.term}” means “${shownMeaning}”`,
+        prompt: promptFor(target, library, type, shownMeaning),
         options: ['True', 'False'],
         correct_answer: makeTrue || !alternative ? 'True' : 'False',
       }
@@ -104,7 +124,7 @@ export function buildPracticeQuestions(
       knowledge_item_id: target.id,
       position: index + 1,
       question_type: 'multiple_choice',
-      prompt: `Which meaning best matches “${target.term}”?`,
+      prompt: promptFor(target, library, 'multiple_choice'),
       options: fillOptions(target.meaning, library, target, (item) => item.meaning, random),
       correct_answer: target.meaning,
     }

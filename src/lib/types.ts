@@ -41,6 +41,12 @@ export type PracticeSource =
   | 'mixed_library'
   | 'attempt_misses'
 export type QuestionType = 'multiple_choice' | 'true_false'
+export const partOfSpeechValues = [
+  'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition',
+  'conjunction', 'determiner', 'interjection', 'phrase', 'idiom',
+  'quotation', 'other',
+] as const
+export type PartOfSpeech = (typeof partOfSpeechValues)[number]
 
 export interface CategoryRecord {
   id: Category
@@ -65,9 +71,14 @@ export interface Profile {
 
 export interface KnowledgeItem {
   id: string
+  term_family_id: string
   term: string
   meaning: string
   example_sentence: string
+  part_of_speech: PartOfSpeech | null
+  pronunciation: string | null
+  sense_label: string | null
+  sense_order: number
   difficulty: Difficulty
   source: 'seeded' | 'user_added'
   owner_id: string | null

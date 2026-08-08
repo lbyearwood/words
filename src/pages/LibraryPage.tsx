@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpDown, Bookmark, BookmarkCheck, BookOpen, Heart, Search, ThumbsDown } from 'lucide-react'
 import { CategoryTags } from '../components/CategoryTags'
+import { SenseMeta } from '../components/SenseMeta'
 import { ErrorState, LoadingState } from '../components/PageState'
 import { useAppData } from '../hooks/useAppData'
 import { saveToCollection, setDislikedState, setLikedState } from '../lib/api'
 import { itemHasCategory, type Category, type Difficulty } from '../lib/types'
+import { groupKnowledgeItems } from '../lib/termFamilies'
 import { useAuth } from '../state/AuthContext'
 
 type LibrarySort = 'alphabetical' | 'reverse-alphabetical' | 'difficulty-ascending' | 'difficulty-descending'
@@ -53,7 +55,14 @@ export function LibraryPage() {
       .filter((item) => item.source === 'seeded')
       .filter((item) => category === 'all' || itemHasCategory(item, category))
       .filter((item) => difficulty === 'all' || item.difficulty === difficulty)
-      .filter((item) => !needle || `${item.term} ${item.meaning}`.toLocaleLowerCase().includes(needle))
+      .filter((item) => !needle || [
+        item.term,
+        item.meaning,
+        item.example_sentence,
+        item.part_of_speech ?? '',
+        item.pronunciation ?? '',
+        item.sense_label ?? '',
+      ].join(' ').toLocaleLowerCase().includes(needle))
 
     return [...items].sort((a, b) => {
       if (sort === 'difficulty-ascending' || sort === 'difficulty-descending') {
@@ -66,6 +75,8 @@ export function LibraryPage() {
       return sort === 'reverse-alphabetical' ? -alphabetical : alphabetical
     })
   }, [category, difficulty, query.data, search, sort])
+
+  const termGroups = useMemo(() => groupKnowledgeItems(filtered), [filtered])
 
   if (query.isLoading) return <LoadingState label="Opening the Library…" />
   if (query.error || !query.data) return <ErrorState message={query.error?.message ?? 'No data found.'} />
@@ -83,7 +94,8 @@ export function LibraryPage() {
           <p>Browse useful terms, then save the ones that matter.</p>
           <div className="list-summary" aria-live="polite">
             <BookOpen aria-hidden="true" />
-            <strong>{filtered.length}</strong> {filtered.length === 1 ? 'term' : 'terms'}
+            <strong>{termGroups.length}</strong> {termGroups.length === 1 ? 'term' : 'terms'}
+            {filtered.length !== termGroups.length ? <span>· {filtered.length} meanings</span> : null}
           </div>
         </div>
       </header>
@@ -146,48 +158,43 @@ export function LibraryPage() {
       </div>
 
       <section className="word-list" aria-label="Library terms">
-        {filtered.map((item) => {
-          const relation = relationByItem.get(item.id)
-          const state = relation?.state
-          const isLiked = relation?.is_liked ?? false
-          const isDisliked = relation?.is_disliked ?? false
-          const isUpdating = (collectionMutation.isPending && collectionMutation.variables === item.id)
-            || (likeMutation.isPending && likeMutation.variables?.itemId === item.id)
-            || (dislikeMutation.isPending && dislikeMutation.variables?.itemId === item.id)
-          return (
-            <article className="word-row" key={item.id} aria-busy={isUpdating}>
-              <div className="word-copy">
-                <div className="word-title-line"><h2>{item.term}</h2><span className="difficulty-badge">{item.difficulty}</span></div>
-                <p>{item.meaning}</p>
-                <blockquote>{item.example_sentence}</blockquote>
-                <CategoryTags item={item} />
-              </div>
-              <div className="word-actions">
-                <button
-                  className={`icon-button ${isLiked ? 'is-liked' : ''}`}
-                  aria-label={`${isLiked ? 'Unlike' : 'Like'} ${item.term}`}
-                  data-tooltip={isLiked ? 'Remove from favourites' : 'Add to favourites'}
-                  disabled={isUpdating}
-                  onClick={() => likeMutation.mutate({ itemId: item.id, isLiked: !isLiked })}
-                ><Heart aria-hidden="true" fill={isLiked ? 'currentColor' : 'none'} /></button>
-                <button
-                  className={`icon-button ${state === 'saved' ? 'is-selected' : ''}`}
-                  aria-label={`${state === 'saved' ? 'Saved in My Collection' : 'Add to My Collection'}: ${item.term}`}
-                  data-tooltip={state === 'saved' ? 'Saved in My Collection' : 'Add to My Collection'}
-                  disabled={isUpdating}
-                  onClick={() => collectionMutation.mutate(item.id)}
-                >{state === 'saved' ? <BookmarkCheck aria-hidden="true" /> : <Bookmark aria-hidden="true" />}</button>
-                <button
-                  className={`icon-button ${isDisliked ? 'is-disliked' : ''}`}
-                  aria-label={`${isDisliked ? 'Remove dislike for' : 'Dislike'} ${item.term}`}
-                  data-tooltip={isDisliked ? 'Remove dislike' : 'Dislike'}
-                  disabled={isUpdating}
-                  onClick={() => dislikeMutation.mutate({ itemId: item.id, isDisliked: !isDisliked })}
-                ><ThumbsDown aria-hidden="true" fill={isDisliked ? 'currentColor' : 'none'} /></button>
-              </div>
-            </article>
-          )
-        })}
+        {termGroups.map((group) => (
+          <article className="word-row term-family-card" key={group.id}>
+            <header className="term-family-heading">
+              <h2>{group.term}</h2>
+              {group.items.length > 1 ? <span>{group.items.length} meanings</span> : null}
+            </header>
+            <div className="term-family-senses">
+              {group.items.map((item) => {
+                const relation = relationByItem.get(item.id)
+                const state = relation?.state
+                const isLiked = relation?.is_liked ?? false
+                const isDisliked = relation?.is_disliked ?? false
+                const isUpdating = (collectionMutation.isPending && collectionMutation.variables === item.id)
+                  || (likeMutation.isPending && likeMutation.variables?.itemId === item.id)
+                  || (dislikeMutation.isPending && dislikeMutation.variables?.itemId === item.id)
+                return (
+                  <section className="term-sense-row" key={item.id} aria-busy={isUpdating}>
+                    <div className="word-copy">
+                      <div className="word-title-line">
+                        <SenseMeta item={item} senseCount={group.items.length} />
+                        <span className="difficulty-badge">{item.difficulty}</span>
+                      </div>
+                      <p>{item.meaning}</p>
+                      <blockquote>{item.example_sentence}</blockquote>
+                      <CategoryTags item={item} />
+                    </div>
+                    <div className="word-actions">
+                      <button className={`icon-button ${isLiked ? 'is-liked' : ''}`} aria-label={`${isLiked ? 'Unlike' : 'Like'} ${item.term}: ${item.meaning}`} data-tooltip={isLiked ? 'Remove from favourites' : 'Add to favourites'} disabled={isUpdating} onClick={() => likeMutation.mutate({ itemId: item.id, isLiked: !isLiked })}><Heart aria-hidden="true" fill={isLiked ? 'currentColor' : 'none'} /></button>
+                      <button className={`icon-button ${state === 'saved' ? 'is-selected' : ''}`} aria-label={`${state === 'saved' ? 'Saved in My Collection' : 'Add to My Collection'}: ${item.term}: ${item.meaning}`} data-tooltip={state === 'saved' ? 'Saved in My Collection' : 'Add to My Collection'} disabled={isUpdating} onClick={() => collectionMutation.mutate(item.id)}>{state === 'saved' ? <BookmarkCheck aria-hidden="true" /> : <Bookmark aria-hidden="true" />}</button>
+                      <button className={`icon-button ${isDisliked ? 'is-disliked' : ''}`} aria-label={`${isDisliked ? 'Remove dislike for' : 'Dislike'} ${item.term}: ${item.meaning}`} data-tooltip={isDisliked ? 'Remove dislike' : 'Dislike'} disabled={isUpdating} onClick={() => dislikeMutation.mutate({ itemId: item.id, isDisliked: !isDisliked })}><ThumbsDown aria-hidden="true" fill={isDisliked ? 'currentColor' : 'none'} /></button>
+                    </div>
+                  </section>
+                )
+              })}
+            </div>
+          </article>
+        ))}
         {filtered.length === 0 && (
           <div className="library-empty-state">
             <BookOpen aria-hidden="true" />

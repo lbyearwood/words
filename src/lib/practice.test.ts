@@ -13,6 +13,7 @@ const professionalCategory: ItemCategory = {
 
 const items: KnowledgeItem[] = Array.from({ length: 20 }, (_, index) => ({
   id: String(index),
+  term_family_id: `family-${index}`,
   term: `Word ${index}`,
   meaning: `Meaning ${index}`,
   example_sentence: `Word ${index} appears in this example.`,
@@ -21,6 +22,10 @@ const items: KnowledgeItem[] = Array.from({ length: 20 }, (_, index) => ({
   source: 'seeded',
   owner_id: null,
   default_importance: 0.7,
+  part_of_speech: 'noun',
+  pronunciation: null,
+  sense_label: null,
+  sense_order: 1,
 }))
 
 describe('buildPracticeQuestions', () => {
@@ -38,6 +43,18 @@ describe('buildPracticeQuestions', () => {
       new Set(['multiple_choice', 'true_false']),
     )
     expect(first.every((question) => new Set(question.options).size === question.options.length)).toBe(true)
+  })
+
+  it('uses one sense per term and adds context when a term has several meanings', () => {
+    const bankSenses: KnowledgeItem[] = [
+      { ...items[0], id: 'bank-money', term_family_id: 'bank', term: 'Bank', meaning: 'A financial institution.', example_sentence: 'I deposited the cheque at the bank.', sense_order: 1 },
+      { ...items[1], id: 'bank-river', term_family_id: 'bank', term: 'Bank', meaning: 'Land beside a river.', example_sentence: 'We sat on the grassy bank.', sense_order: 2 },
+    ]
+    const library = [...bankSenses, ...items.slice(2)]
+    const questions = buildPracticeQuestions(bankSenses, library, 10, 'several-meanings')
+
+    expect(questions).toHaveLength(1)
+    expect(questions[0]?.prompt).toContain('In the sentence')
   })
 })
 

@@ -4,10 +4,12 @@ import { BarChart3, Bookmark, BookmarkMinus, BookOpenCheck, Check, ChevronDown, 
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import { CategoryTags } from '../components/CategoryTags'
+import { SenseMeta } from '../components/SenseMeta'
 import { ErrorState, LoadingState } from '../components/PageState'
 import { useCollectionData } from '../hooks/useAppData'
 import { createPersonalItem, createScopedPracticeAttempt, removeFromCollection, saveToCollection, setDislikedState, setLikedState } from '../lib/api'
-import { categoryIds, type Category, type ConfidenceStatus } from '../lib/types'
+import { categoryIds, partOfSpeechValues, type Category, type ConfidenceStatus } from '../lib/types'
+import { groupKnowledgeItems } from '../lib/termFamilies'
 import { useAuth } from '../state/AuthContext'
 
 const itemSchema = z.object({
@@ -17,6 +19,9 @@ const itemSchema = z.object({
   primary_category: z.enum(categoryIds),
   secondary_categories: z.array(z.enum(categoryIds)),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
+  part_of_speech: z.union([z.enum(partOfSpeechValues), z.literal('')]).transform((value) => value || null),
+  pronunciation: z.string().trim().max(120).transform((value) => value || null),
+  sense_label: z.string().trim().max(120).transform((value) => value || null),
 })
 
 const confidenceClass: Record<ConfidenceStatus, string> = {
@@ -199,6 +204,22 @@ export function CollectionPage() {
       })
   }, [filteredRows, search, sort])
 
+  const groupedRows = useMemo(() => {
+    const rowByItem = new Map(rows.map((row) => [row.item.id, row]))
+    return groupKnowledgeItems(rows.map((row) => row.item)).map((group) => ({
+      ...group,
+      rows: group.items.flatMap((item) => {
+        const row = rowByItem.get(item.id)
+        return row ? [row] : []
+      }),
+    }))
+  }, [rows])
+
+  const savedTermCount = useMemo(
+    () => groupKnowledgeItems(savedRows.map((row) => row.item)).length,
+    [savedRows],
+  )
+
   const toggleCategory = (category: Category) => {
     setSelectedCategories((current) => current.includes(category)
       ? current.filter((selected) => selected !== category)
@@ -225,6 +246,9 @@ export function CollectionPage() {
       primary_category: form.get('primary_category'),
       secondary_categories: form.getAll('secondary_categories'),
       difficulty: form.get('difficulty'),
+      part_of_speech: form.get('part_of_speech'),
+      pronunciation: form.get('pronunciation'),
+      sense_label: form.get('sense_label'),
     })
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message ?? 'Check the details and try again.')
@@ -254,7 +278,7 @@ export function CollectionPage() {
 
       <div className="collection-overview">
         <section className="collection-summary" aria-label="Collection summary">
-          <article className="collection-summary-card total"><span><BookOpenCheck aria-hidden="true" /></span><div><strong>{savedRows.length}</strong><small>Total terms</small></div></article>
+          <article className="collection-summary-card total"><span><BookOpenCheck aria-hidden="true" /></span><div><strong>{savedTermCount}</strong><small>Total terms{savedRows.length !== savedTermCount ? ` · ${savedRows.length} meanings` : ''}</small></div></article>
           <article className="collection-summary-card confident"><span><Check aria-hidden="true" /></span><div><strong>{confidenceCounts.Confident}</strong><small>Mastered</small></div></article>
           <article className="collection-summary-card learning"><span><Sparkles aria-hidden="true" /></span><div><strong>{confidenceCounts.Learning}</strong><small>Learning</small></div></article>
           <article className="collection-summary-card needs-practice"><span><BarChart3 aria-hidden="true" /></span><div><strong>{confidenceCounts['Needs practice']}</strong><small>Needs practice</small></div></article>
@@ -319,51 +343,39 @@ export function CollectionPage() {
         </div>
       ) : null}
 
-      {rows.length ? (
+      {groupedRows.length ? (
         <section className="collection-list" aria-label={filter === 'Disliked' ? 'Disliked terms' : 'Saved terms'}>
-          {rows.map(({ item, collection, confidence }) => {
-            const isUpdating = (removeMutation.isPending && removeMutation.variables === item.id)
-              || (saveMutation.isPending && saveMutation.variables === item.id)
-              || (likeMutation.isPending && likeMutation.variables?.itemId === item.id)
-              || (dislikeMutation.isPending && dislikeMutation.variables?.itemId === item.id)
-            return (
-              <article className="collection-row" key={item.id} aria-busy={isUpdating}>
-              <div className="collection-card-copy">
-                <h2>{item.term}</h2>
-                <p>{item.meaning}</p>
-                <CategoryTags item={item} />
-                <div className="collection-card-meta"><small><BarChart3 aria-hidden="true" />{item.source === 'user_added' ? 'Personal' : item.difficulty}</small><span className={`confidence-status ${confidenceClass[confidence]}`}><i />{confidenceLabel(confidence)}</span></div>
+          {groupedRows.map((group) => (
+            <article className="collection-row term-family-card" key={group.id}>
+              <header className="term-family-heading">
+                <h2>{group.term}</h2>
+                {group.rows.length > 1 ? <span>{group.rows.length} meanings</span> : null}
+              </header>
+              <div className="term-family-senses">
+                {group.rows.map(({ item, collection, confidence }) => {
+                  const isUpdating = (removeMutation.isPending && removeMutation.variables === item.id)
+                    || (saveMutation.isPending && saveMutation.variables === item.id)
+                    || (likeMutation.isPending && likeMutation.variables?.itemId === item.id)
+                    || (dislikeMutation.isPending && dislikeMutation.variables?.itemId === item.id)
+                  return (
+                    <section className="term-sense-row" key={item.id} aria-busy={isUpdating}>
+                      <div className="collection-card-copy">
+                        <SenseMeta item={item} senseCount={group.rows.length} />
+                        <p>{item.meaning}</p>
+                        <CategoryTags item={item} />
+                        <div className="collection-card-meta"><small><BarChart3 aria-hidden="true" />{item.source === 'user_added' ? 'Personal' : item.difficulty}</small><span className={`confidence-status ${confidenceClass[confidence]}`}><i />{confidenceLabel(confidence)}</span></div>
+                      </div>
+                      <div className="collection-card-actions">
+                        <button className={`icon-button ${collection.is_liked ? 'is-liked' : ''}`} aria-label={`${collection.is_liked ? 'Unlike' : 'Like'} ${item.term}: ${item.meaning}`} data-tooltip={collection.is_liked ? 'Remove from favourites' : 'Add to favourites'} disabled={isUpdating} onClick={() => likeMutation.mutate({ itemId: item.id, isLiked: !collection.is_liked })}><Heart aria-hidden="true" fill={collection.is_liked ? 'currentColor' : 'none'} /></button>
+                        <button className={`icon-button ${collection.state === 'saved' ? 'is-selected' : ''}`} aria-label={collection.state === 'saved' ? `Remove ${item.term}: ${item.meaning} from My Collection` : `Add ${item.term}: ${item.meaning} to My Collection`} data-tooltip={collection.state === 'saved' ? 'Remove from My Collection' : 'Add to My Collection'} disabled={isUpdating} onClick={() => collection.state === 'saved' ? removeMutation.mutate(item.id) : saveMutation.mutate(item.id)}>{collection.state === 'saved' ? <BookmarkMinus aria-hidden="true" /> : <Bookmark aria-hidden="true" />}</button>
+                        <button className={`icon-button ${collection.is_disliked ? 'is-disliked' : ''}`} aria-label={`${collection.is_disliked ? 'Remove dislike for' : 'Dislike'} ${item.term}: ${item.meaning}`} data-tooltip={collection.is_disliked ? 'Remove dislike' : 'Dislike'} disabled={isUpdating} onClick={() => dislikeMutation.mutate({ itemId: item.id, isDisliked: !collection.is_disliked })}><ThumbsDown aria-hidden="true" fill={collection.is_disliked ? 'currentColor' : 'none'} /></button>
+                      </div>
+                    </section>
+                  )
+                })}
               </div>
-              <div className="collection-card-actions">
-                <button
-                  className={`icon-button ${collection.is_liked ? 'is-liked' : ''}`}
-                  aria-label={`${collection.is_liked ? 'Unlike' : 'Like'} ${item.term}`}
-                  data-tooltip={collection.is_liked ? 'Remove from favourites' : 'Add to favourites'}
-                  disabled={isUpdating}
-                  onClick={() => likeMutation.mutate({ itemId: item.id, isLiked: !collection.is_liked })}
-                ><Heart aria-hidden="true" fill={collection.is_liked ? 'currentColor' : 'none'} /></button>
-                <button
-                  className={`icon-button ${collection.state === 'saved' ? 'is-selected' : ''}`}
-                  aria-label={collection.state === 'saved' ? `Remove ${item.term} from My Collection` : `Add ${item.term} to My Collection`}
-                  data-tooltip={collection.state === 'saved' ? 'Remove from My Collection' : 'Add to My Collection'}
-                  disabled={isUpdating}
-                  onClick={() => collection.state === 'saved' ? removeMutation.mutate(item.id) : saveMutation.mutate(item.id)}
-                >
-                  {collection.state === 'saved' ? <BookmarkMinus aria-hidden="true" /> : <Bookmark aria-hidden="true" />}
-                </button>
-                <button
-                  className={`icon-button ${collection.is_disliked ? 'is-disliked' : ''}`}
-                  aria-label={`${collection.is_disliked ? 'Remove dislike for' : 'Dislike'} ${item.term}`}
-                  data-tooltip={collection.is_disliked ? 'Remove dislike' : 'Dislike'}
-                  disabled={isUpdating}
-                  onClick={() => dislikeMutation.mutate({ itemId: item.id, isDisliked: !collection.is_disliked })}
-                >
-                  <ThumbsDown aria-hidden="true" fill={collection.is_disliked ? 'currentColor' : 'none'} />
-                </button>
-              </div>
-              </article>
-            )
-          })}
+            </article>
+          ))}
         </section>
       ) : (
         <div className="empty-state"><h2>{filter === 'Liked' ? 'No liked terms yet' : filter === 'Disliked' ? 'No disliked terms' : savedRows.length ? 'No matching terms' : 'No terms here yet'}</h2><p>{filter === 'Liked' ? 'Use the heart on any term to add it to your favourites.' : filter === 'Disliked' ? 'Use the thumbs-down icon on any term you dislike and it will appear here.' : savedRows.length ? 'Try another search, status or category filter.' : 'Save something from the Library or add a term of your own.'}</p>{savedRows.length || filter === 'Disliked' ? <button className="secondary-button" onClick={clearFilters}>Clear filters</button> : null}</div>
@@ -377,6 +389,11 @@ export function CollectionPage() {
               <label>Term<input name="term" required maxLength={160} /></label>
               <label>Plain-English meaning<textarea name="meaning" required rows={3} maxLength={600} /></label>
               <label>Example sentence<textarea name="example" required rows={3} maxLength={800} /></label>
+              <div className="form-grid">
+                <label>Part of speech<select name="part_of_speech" defaultValue=""><option value="">Not set</option>{partOfSpeechValues.map((value) => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}</select></label>
+                <label>Sense label <small>Optional</small><input name="sense_label" maxLength={120} placeholder="e.g. separate and distinct" /></label>
+              </div>
+              <label>Sound it out <small>Single words only, no IPA</small><input name="pronunciation" maxLength={120} placeholder="e.g. dis-CREET" /></label>
               <div className="form-grid">
                 <label>Primary category<select name="primary_category" value={primaryCategory} onChange={(event) => setPrimaryCategory(event.target.value as Category)}>{query.data.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
                 <label>Difficulty<select name="difficulty" defaultValue="intermediate"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></label>

@@ -7,6 +7,7 @@ import type {
   Difficulty,
   KnowledgeItem,
   KnowledgeItemCategoryRow,
+  PartOfSpeech,
   AnswerFeedback,
   CategoryGoal,
   LearningDashboard,
@@ -348,6 +349,9 @@ export async function createPersonalItem(input: {
   primary_category: Category
   secondary_categories: Category[]
   difficulty: Difficulty
+  part_of_speech: PartOfSpeech | null
+  pronunciation: string | null
+  sense_label: string | null
 }) {
   const { data, error } = await supabase.rpc('create_personal_item', {
     p_term: input.term,
@@ -356,6 +360,9 @@ export async function createPersonalItem(input: {
     p_primary_category: input.primary_category,
     p_secondary_categories: input.secondary_categories,
     p_difficulty: input.difficulty,
+    p_part_of_speech: input.part_of_speech,
+    p_pronunciation: input.pronunciation,
+    p_sense_label: input.sense_label,
   })
   if (error) throw new Error(error.message)
   return data as string
