@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowUpDown, Bookmark, BookmarkCheck, BookOpen, Heart, Search, ThumbsDown } from 'lucide-react'
+import { ArrowUpDown, BarChart3, Bookmark, BookmarkCheck, BookOpen, Heart, Search, ThumbsDown } from 'lucide-react'
 import { CategoryTags } from '../components/CategoryTags'
 import { SenseMeta } from '../components/SenseMeta'
+import { TermFamilyHeader } from '../components/TermFamilyHeader'
 import { ErrorState, LoadingState } from '../components/PageState'
 import { useAppData } from '../hooks/useAppData'
 import { saveToCollection, setDislikedState, setLikedState } from '../lib/api'
@@ -160,10 +161,7 @@ export function LibraryPage() {
       <section className="word-list" aria-label="Library terms">
         {termGroups.map((group) => (
           <article className="word-row term-family-card" key={group.id}>
-            <header className="term-family-heading">
-              <h2>{group.term}</h2>
-              {group.items.length > 1 ? <span>{group.items.length} meanings</span> : null}
-            </header>
+            <TermFamilyHeader term={group.term} items={group.items} />
             <div className="term-family-senses">
               {group.items.map((item) => {
                 const relation = relationByItem.get(item.id)
@@ -177,12 +175,14 @@ export function LibraryPage() {
                   <section className="term-sense-row" key={item.id} aria-busy={isUpdating}>
                     <div className="word-copy">
                       <div className="word-title-line">
-                        <SenseMeta item={item} senseCount={group.items.length} />
-                        <span className="difficulty-badge">{item.difficulty}</span>
+                        <SenseMeta item={item} senseCount={group.items.length} showPronunciation={new Set(group.items.map((sense) => sense.pronunciation).filter(Boolean)).size !== 1} />
                       </div>
-                      <p>{item.meaning}</p>
+                      <p className="sense-meaning">{item.meaning}</p>
                       <blockquote>{item.example_sentence}</blockquote>
-                      <CategoryTags item={item} />
+                      <div className="library-sense-footer">
+                        <CategoryTags item={item} />
+                        <small className="sense-difficulty"><BarChart3 aria-hidden="true" />{item.difficulty}</small>
+                      </div>
                     </div>
                     <div className="word-actions">
                       <button className={`icon-button ${isLiked ? 'is-liked' : ''}`} aria-label={`${isLiked ? 'Unlike' : 'Like'} ${item.term}: ${item.meaning}`} data-tooltip={isLiked ? 'Remove from favourites' : 'Add to favourites'} disabled={isUpdating} onClick={() => likeMutation.mutate({ itemId: item.id, isLiked: !isLiked })}><Heart aria-hidden="true" fill={isLiked ? 'currentColor' : 'none'} /></button>

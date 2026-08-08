@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import { CategoryTags } from '../components/CategoryTags'
 import { SenseMeta } from '../components/SenseMeta'
+import { TermFamilyHeader } from '../components/TermFamilyHeader'
 import { ErrorState, LoadingState } from '../components/PageState'
 import { useCollectionData } from '../hooks/useAppData'
 import { createPersonalItem, createScopedPracticeAttempt, removeFromCollection, saveToCollection, setDislikedState, setLikedState } from '../lib/api'
@@ -347,10 +348,7 @@ export function CollectionPage() {
         <section className="collection-list" aria-label={filter === 'Disliked' ? 'Disliked terms' : 'Saved terms'}>
           {groupedRows.map((group) => (
             <article className="collection-row term-family-card" key={group.id}>
-              <header className="term-family-heading">
-                <h2>{group.term}</h2>
-                {group.rows.length > 1 ? <span>{group.rows.length} meanings</span> : null}
-              </header>
+              <TermFamilyHeader term={group.term} items={group.items} />
               <div className="term-family-senses">
                 {group.rows.map(({ item, collection, confidence }) => {
                   const isUpdating = (removeMutation.isPending && removeMutation.variables === item.id)
@@ -360,10 +358,13 @@ export function CollectionPage() {
                   return (
                     <section className="term-sense-row" key={item.id} aria-busy={isUpdating}>
                       <div className="collection-card-copy">
-                        <SenseMeta item={item} senseCount={group.rows.length} />
-                        <p>{item.meaning}</p>
-                        <CategoryTags item={item} />
-                        <div className="collection-card-meta"><small><BarChart3 aria-hidden="true" />{item.source === 'user_added' ? 'Personal' : item.difficulty}</small><span className={`confidence-status ${confidenceClass[confidence]}`}><i />{confidenceLabel(confidence)}</span></div>
+                        <SenseMeta item={item} senseCount={group.rows.length} showPronunciation={new Set(group.items.map((sense) => sense.pronunciation).filter(Boolean)).size !== 1} />
+                        <p className="sense-meaning">{item.meaning}</p>
+                        <div className="collection-card-meta">
+                          <CategoryTags item={item} />
+                          <small><BarChart3 aria-hidden="true" />{item.source === 'user_added' ? 'Personal' : item.difficulty}</small>
+                          <span className={`confidence-status ${confidenceClass[confidence]}`}><i />{confidenceLabel(confidence)}</span>
+                        </div>
                       </div>
                       <div className="collection-card-actions">
                         <button className={`icon-button ${collection.is_liked ? 'is-liked' : ''}`} aria-label={`${collection.is_liked ? 'Unlike' : 'Like'} ${item.term}: ${item.meaning}`} data-tooltip={collection.is_liked ? 'Remove from favourites' : 'Add to favourites'} disabled={isUpdating} onClick={() => likeMutation.mutate({ itemId: item.id, isLiked: !collection.is_liked })}><Heart aria-hidden="true" fill={collection.is_liked ? 'currentColor' : 'none'} /></button>
