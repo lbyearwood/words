@@ -40,7 +40,11 @@ const confidenceClass: Record<ConfidenceStatus, string> = {
   'Needs practice': 'needs-practice',
 }
 
-const confidenceLabel = (status: ConfidenceStatus) => status === 'Confident' ? 'Mastered' : status
+const confidenceLabel = (status: ConfidenceStatus) => {
+  if (status === 'Confident') return 'Mastered'
+  if (status === 'New') return 'Untested'
+  return status
+}
 
 type CollectionSort = 'recent' | 'alphabetical' | 'reverse-alphabetical' | 'needs-practice'
 type CollectionFilter = 'All' | 'Liked' | 'Disliked' | ConfidenceStatus
@@ -302,7 +306,7 @@ export function CollectionPage() {
         <div className="confidence-filters" aria-label="Filter by confidence">
           {(['All', 'Liked', 'Disliked', 'New', 'Learning', 'Confident', 'Needs practice'] as const).map((status) => {
             const count = status === 'All' ? savedRows.length : status === 'Liked' ? likedCount : status === 'Disliked' ? dislikedCount : confidenceCounts[status]
-            const label = status === 'Confident' ? 'Mastered' : status
+            const label = status === 'New' || status === 'Confident' ? confidenceLabel(status) : status
             return <button key={status} aria-label={`${label}: ${count}`} className={filter === status ? 'is-active' : ''} onClick={() => setFilter(status)}>{label}</button>
           })}
         </div>
@@ -369,8 +373,8 @@ export function CollectionPage() {
                         <SenseMeta item={item} senseCount={group.rows.length} showPronunciation={new Set(group.items.map((sense) => sense.pronunciation).filter(Boolean)).size !== 1} />
                         <p className="sense-meaning">{item.meaning}</p>
                         <blockquote>{item.example_sentence}</blockquote>
+                        <CategoryTags item={item} />
                         <div className="collection-card-meta">
-                          <CategoryTags item={item} />
                           <small><BarChart3 aria-hidden="true" />{item.difficulty}</small>
                           <span className={`confidence-status ${confidenceClass[confidence]}`}><i />{confidenceLabel(confidence)}</span>
                         </div>

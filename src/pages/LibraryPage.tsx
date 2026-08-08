@@ -179,8 +179,8 @@ export function LibraryPage() {
                       </div>
                       <p className="sense-meaning">{item.meaning}</p>
                       <blockquote>{item.example_sentence}</blockquote>
+                      <CategoryTags item={item} />
                       <div className="library-sense-footer">
-                        <CategoryTags item={item} />
                         <small className="sense-difficulty"><BarChart3 aria-hidden="true" />{item.difficulty}</small>
                       </div>
                     </div>

@@ -211,7 +211,7 @@ a.metric-row:hover { background: var(--green-50); }
 .word-title-line .difficulty-badge { min-height: 25px; display: inline-flex; align-items: center; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; color: #536159; background: #f9fbfa; font-size: 0.7rem; font-weight: 600; text-transform: capitalize; }
 .word-copy p { margin: 7px 0 4px; color: var(--ink); line-height: 1.42; }
 .word-copy blockquote { margin: 4px 0; color: var(--muted); font-style: italic; line-height: 1.42; }
-.library-sense-footer { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
+.library-sense-footer { display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-top: auto; padding-top: 14px; }
 .library-sense-footer .category-tags { margin-top: 0; }
 .sense-difficulty { display: inline-flex; align-items: center; gap: 7px; color: var(--green-800); font-size: .78rem; text-transform: capitalize; }
 .sense-difficulty svg { width: 18px; height: 18px; }
@@ -314,9 +314,24 @@ a.metric-row:hover { background: var(--green-50); }
 .term-family-card .sense-badges > span { min-height: 28px; padding: 5px 10px; border-color: #96cfaf; background: #f7fcf9; font-size: .72rem; font-weight: 760; }
 .term-family-card .sense-meaning { margin-top: 15px; font-size: .96rem; line-height: 1.4; }
 .term-family-card .collection-card-meta,
-.term-family-card .library-sense-footer { margin-top: 17px; padding-top: 13px; border-top: 1px solid #c9e3d5; }
-.term-family-card .category-tags { margin-top: 0; }
-.term-family-card .category-tags > span { min-height: 27px; padding: 5px 9px; font-size: .7rem; }
+.term-family-card .library-sense-footer { margin-top: 0; padding-top: 15px; border-top: 0; }
+.term-family-card .category-tags {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 15px;
+  padding-top: 13px;
+  border-top: 1px solid #c9e3d5;
+}
+.term-family-card .category-tags > span {
+  min-width: 0;
+  min-height: 29px;
+  justify-content: flex-start;
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-size: .7rem;
+  overflow-wrap: anywhere;
+}
 .term-family-card .collection-card-actions,
 .term-family-card .word-actions { gap: 4px; margin: -3px -3px 0 0; }
 .term-family-card .icon-button { width: 42px; height: 42px; border: 1px solid transparent; background: #f8faf9; }
@@ -673,9 +688,7 @@ a.metric-row:hover { background: var(--green-50); }
   .term-family-card .icon-button { width: 40px; height: 40px; }
   .term-family-card .icon-button svg { width: 20px; height: 20px; }
   .term-family-card .collection-card-meta,
-  .term-family-card .library-sense-footer { align-items: flex-start; gap: 10px; margin-top: 18px; padding-top: 14px; }
-  .term-family-card .collection-card-meta { display: grid; grid-template-columns: 1fr auto; }
-  .term-family-card .collection-card-meta .category-tags { grid-column: 1 / -1; }
+  .term-family-card .library-sense-footer { align-items: center; gap: 10px; margin-top: 0; padding-top: 14px; }
 }
 
 @media (min-width: 700px) {
