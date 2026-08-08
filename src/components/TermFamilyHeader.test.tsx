@@ -18,4 +18,17 @@ describe('TermFamilyHeader', () => {
 
     expect(screen.getByText('2 meanings')).toBeVisible()
   })
+
+  it('places supplied actions in the title row after the pronunciation', () => {
+    render(
+      <TermFamilyHeader
+        term="Discrete"
+        items={[item('dis-CREET')]}
+        actions={<button type="button">Like</button>}
+      />,
+    )
+
+    const heading = screen.getByRole('heading', { name: /Discrete/ })
+    expect(heading.nextElementSibling).toBe(screen.getByRole('button', { name: 'Like' }))
+  })
 })

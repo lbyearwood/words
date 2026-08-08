@@ -190,10 +190,10 @@ a.metric-row:hover { background: var(--green-50); }
 .word-row:hover { border-color: #b9d4c4; box-shadow: 0 7px 18px rgba(18,44,30,.07); }
 .word-row[aria-busy="true"] { opacity: .66; }
 .term-family-card { min-height: 0; display: block; padding: 0; overflow: visible; }
-.term-family-heading { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 18px; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, var(--green-50), #fff 72%); border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.term-family-heading { min-height: 64px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 16px 18px; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, var(--green-50), #fff 72%); border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .term-family-heading h2 { min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin: 0; color: var(--green-950); font-size: 1.2rem; }
 .term-pronunciation { color: #56645d; font-size: .78em; font-weight: 500; letter-spacing: .01em; }
-.term-family-heading > .meaning-count { min-height: 32px; display: inline-flex; align-items: center; padding: 5px 12px; border: 1px solid #9fd4b7; border-radius: 999px; color: var(--green-900); background: #fff; font-size: .76rem; font-weight: 750; white-space: nowrap; }
+.term-family-heading > .meaning-count { min-height: 32px; display: inline-flex; align-items: center; margin-left: auto; padding: 5px 12px; border: 1px solid #9fd4b7; border-radius: 999px; color: var(--green-900); background: #fff; font-size: .76rem; font-weight: 750; white-space: nowrap; }
 .term-family-senses { display: grid; gap: 0; }
 .term-sense-row { min-width: 0; min-height: 142px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 18px; }
 .term-sense-row + .term-sense-row { border-top: 1px solid var(--line); }
@@ -336,6 +336,9 @@ a.metric-row:hover { background: var(--green-50); }
 }
 .term-family-card .collection-card-actions,
 .term-family-card .word-actions { order: -1; align-self: flex-end; gap: 4px; margin: -3px -3px 8px 0; }
+.term-family-card .term-family-inline-actions { order: 0; align-self: center; margin: 0; }
+.term-family-card .term-family-inline-actions .icon-button { width: 34px; height: 34px; }
+.term-family-card .term-family-inline-actions .icon-button svg { width: 18px; height: 18px; }
 .term-family-card .icon-button { width: 42px; height: 42px; border: 1px solid transparent; background: #f8faf9; }
 .term-family-card .icon-button svg { width: 21px; height: 21px; }
 .term-family-card .icon-button.is-liked { color: #c52d58; border-color: #f8dce5; background: #fff0f4; }
@@ -677,8 +680,8 @@ a.metric-row:hover { background: var(--green-50); }
   .question-context-row { align-items: flex-start; }
   .question-item-actions { flex: 0 0 auto; }
   .question-item-actions .icon-button { width: 40px; height: 40px; }
-  .term-family-card .term-family-heading { min-height: 64px; align-items: flex-start; padding: 14px; }
-  .term-family-card .term-family-heading h2 { display: grid; gap: 3px; font-size: 1.18rem; }
+  .term-family-card .term-family-heading { min-height: 64px; align-items: center; padding: 14px; }
+  .term-family-card .term-family-heading h2 { display: flex; gap: 6px; font-size: 1.18rem; }
   .term-family-card .term-pronunciation { font-size: .7em; }
   .term-family-card .meaning-count { min-height: 34px; padding: 5px 11px; font-size: .72rem; }
   .term-family-card .term-family-senses { gap: 12px; padding: 12px; }
@@ -687,6 +690,7 @@ a.metric-row:hover { background: var(--green-50); }
   .term-family-card .sense-meaning { margin-top: 18px; font-size: 1.06rem; }
   .term-family-card .collection-card-actions,
   .term-family-card .word-actions { gap: 3px; margin: -5px -5px 8px 0; }
+  .term-family-card .term-family-inline-actions { margin: 0; }
   .term-family-card .icon-button { width: 40px; height: 40px; }
   .term-family-card .icon-button svg { width: 20px; height: 20px; }
   .term-family-card .collection-card-meta,

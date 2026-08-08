@@ -233,6 +233,28 @@ export function CollectionPage() {
     [savedRows],
   )
 
+  const isCollectionItemUpdating = (itemId: string) => (
+    (removeMutation.isPending && removeMutation.variables === itemId)
+    || (saveMutation.isPending && saveMutation.variables === itemId)
+    || (likeMutation.isPending && likeMutation.variables?.itemId === itemId)
+    || (dislikeMutation.isPending && dislikeMutation.variables?.itemId === itemId)
+  )
+
+  const renderCollectionActions = (
+    row: (typeof collectionRows)[number],
+    placementClass = '',
+  ) => {
+    const { item, collection } = row
+    const isUpdating = isCollectionItemUpdating(item.id)
+    return (
+      <div className={`collection-card-actions ${placementClass}`.trim()} aria-busy={isUpdating}>
+        <button className={`icon-button ${collection.is_liked ? 'is-liked' : ''}`} aria-label={`${collection.is_liked ? 'Unlike' : 'Like'} ${item.term}: ${item.meaning}`} data-tooltip={collection.is_liked ? 'Remove from favourites' : 'Add to favourites'} disabled={isUpdating} onClick={() => likeMutation.mutate({ itemId: item.id, isLiked: !collection.is_liked })}><Heart aria-hidden="true" fill={collection.is_liked ? 'currentColor' : 'none'} /></button>
+        <button className={`icon-button ${collection.state === 'saved' ? 'is-selected' : ''}`} aria-label={collection.state === 'saved' ? `Remove ${item.term}: ${item.meaning} from My Collection` : `Add ${item.term}: ${item.meaning} to My Collection`} data-tooltip={collection.state === 'saved' ? 'Remove from My Collection' : 'Add to My Collection'} disabled={isUpdating} onClick={() => collection.state === 'saved' ? removeMutation.mutate(item.id) : saveMutation.mutate(item.id)}>{collection.state === 'saved' ? <BookmarkMinus aria-hidden="true" /> : <Bookmark aria-hidden="true" />}</button>
+        <button className={`icon-button ${collection.is_disliked ? 'is-disliked' : ''}`} aria-label={`${collection.is_disliked ? 'Remove dislike for' : 'Dislike'} ${item.term}: ${item.meaning}`} data-tooltip={collection.is_disliked ? 'Remove dislike' : 'Dislike'} disabled={isUpdating} onClick={() => dislikeMutation.mutate({ itemId: item.id, isDisliked: !collection.is_disliked })}><ThumbsDown aria-hidden="true" fill={collection.is_disliked ? 'currentColor' : 'none'} /></button>
+      </div>
+    )
+  }
+
   const toggleCategory = (category: Category) => {
     setSelectedCategories((current) => current.includes(category)
       ? current.filter((selected) => selected !== category)
@@ -358,15 +380,18 @@ export function CollectionPage() {
 
       {groupedRows.length ? (
         <section className="collection-list" aria-label={filter === 'Disliked' ? 'Disliked terms' : 'Saved terms'}>
-          {groupedRows.map((group) => (
+          {groupedRows.map((group) => {
+            const headerRow = group.rows.length === 1 ? group.rows[0] : null
+            return (
             <article className="collection-row term-family-card" key={group.id}>
-              <TermFamilyHeader term={group.term} items={group.items} />
+              <TermFamilyHeader
+                term={group.term}
+                items={group.items}
+                actions={headerRow ? renderCollectionActions(headerRow, 'term-family-inline-actions') : undefined}
+              />
               <div className="term-family-senses">
                 {group.rows.map(({ item, collection, confidence }) => {
-                  const isUpdating = (removeMutation.isPending && removeMutation.variables === item.id)
-                    || (saveMutation.isPending && saveMutation.variables === item.id)
-                    || (likeMutation.isPending && likeMutation.variables?.itemId === item.id)
-                    || (dislikeMutation.isPending && dislikeMutation.variables?.itemId === item.id)
+                  const isUpdating = isCollectionItemUpdating(item.id)
                   return (
                     <section className="term-sense-row" key={item.id} aria-busy={isUpdating}>
                       <div className="collection-card-copy">
@@ -379,17 +404,14 @@ export function CollectionPage() {
                           <span className={`confidence-status ${confidenceClass[confidence]}`}><i />{confidenceLabel(confidence)}</span>
                         </div>
                       </div>
-                      <div className="collection-card-actions">
-                        <button className={`icon-button ${collection.is_liked ? 'is-liked' : ''}`} aria-label={`${collection.is_liked ? 'Unlike' : 'Like'} ${item.term}: ${item.meaning}`} data-tooltip={collection.is_liked ? 'Remove from favourites' : 'Add to favourites'} disabled={isUpdating} onClick={() => likeMutation.mutate({ itemId: item.id, isLiked: !collection.is_liked })}><Heart aria-hidden="true" fill={collection.is_liked ? 'currentColor' : 'none'} /></button>
-                        <button className={`icon-button ${collection.state === 'saved' ? 'is-selected' : ''}`} aria-label={collection.state === 'saved' ? `Remove ${item.term}: ${item.meaning} from My Collection` : `Add ${item.term}: ${item.meaning} to My Collection`} data-tooltip={collection.state === 'saved' ? 'Remove from My Collection' : 'Add to My Collection'} disabled={isUpdating} onClick={() => collection.state === 'saved' ? removeMutation.mutate(item.id) : saveMutation.mutate(item.id)}>{collection.state === 'saved' ? <BookmarkMinus aria-hidden="true" /> : <Bookmark aria-hidden="true" />}</button>
-                        <button className={`icon-button ${collection.is_disliked ? 'is-disliked' : ''}`} aria-label={`${collection.is_disliked ? 'Remove dislike for' : 'Dislike'} ${item.term}: ${item.meaning}`} data-tooltip={collection.is_disliked ? 'Remove dislike' : 'Dislike'} disabled={isUpdating} onClick={() => dislikeMutation.mutate({ itemId: item.id, isDisliked: !collection.is_disliked })}><ThumbsDown aria-hidden="true" fill={collection.is_disliked ? 'currentColor' : 'none'} /></button>
-                      </div>
+                      {group.rows.length > 1 ? renderCollectionActions({ item, collection, confidence }) : null}
                     </section>
                   )
                 })}
               </div>
             </article>
-          ))}
+            )
+          })}
         </section>
       ) : (
         <div className="empty-state"><h2>{filter === 'Liked' ? 'No liked terms yet' : filter === 'Disliked' ? 'No disliked terms' : savedRows.length ? 'No matching terms' : 'No terms here yet'}</h2><p>{filter === 'Liked' ? 'Use the heart on any term to add it to your favourites.' : filter === 'Disliked' ? 'Use the thumbs-down icon on any term you dislike and it will appear here.' : savedRows.length ? 'Try another search, status or category filter.' : 'Save something from the Library or add a term of your own.'}</p>{savedRows.length || filter === 'Disliked' ? <button className="secondary-button" onClick={clearFilters}>Clear filters</button> : null}</div>
