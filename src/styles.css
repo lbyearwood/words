@@ -336,9 +336,11 @@ a.metric-row:hover { background: var(--green-50); }
 }
 .term-family-card .collection-card-actions,
 .term-family-card .word-actions { order: -1; align-self: flex-end; gap: 4px; margin: -3px -3px 8px 0; }
+.term-family-card .term-family-heading:has(.term-family-inline-actions) { position: relative; padding-bottom: 50px; }
+.term-family-card .term-family-heading:has(.term-family-inline-actions) > .meaning-count { position: absolute; right: 17px; bottom: 12px; margin-left: 0; }
 .term-family-card .term-family-inline-actions { order: 0; align-self: center; margin: 0; }
-.term-family-card .term-family-inline-actions .icon-button { width: 34px; height: 34px; }
-.term-family-card .term-family-inline-actions .icon-button svg { width: 18px; height: 18px; }
+.term-family-card .term-family-inline-actions .icon-button { width: 30px; height: 30px; }
+.term-family-card .term-family-inline-actions .icon-button svg { width: 16px; height: 16px; }
 .term-family-card .icon-button { width: 42px; height: 42px; border: 1px solid transparent; background: #f8faf9; }
 .term-family-card .icon-button svg { width: 21px; height: 21px; }
 .term-family-card .icon-button.is-liked { color: #c52d58; border-color: #f8dce5; background: #fff0f4; }
@@ -691,6 +693,8 @@ a.metric-row:hover { background: var(--green-50); }
   .term-family-card .collection-card-actions,
   .term-family-card .word-actions { gap: 3px; margin: -5px -5px 8px 0; }
   .term-family-card .term-family-inline-actions { margin: 0; }
+  .term-family-card .term-family-heading:has(.term-family-inline-actions) { padding-bottom: 48px; }
+  .term-family-card .term-family-heading:has(.term-family-inline-actions) > .meaning-count { right: 14px; bottom: 10px; }
   .term-family-card .icon-button { width: 40px; height: 40px; }
   .term-family-card .icon-button svg { width: 20px; height: 20px; }
   .term-family-card .collection-card-meta,
