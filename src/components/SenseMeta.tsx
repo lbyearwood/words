@@ -5,10 +5,12 @@ export function SenseMeta({ item, senseCount }: { item: KnowledgeItem; senseCoun
 
   return (
     <div className="sense-meta" aria-label="Meaning details">
-      {item.part_of_speech ? <span>{item.part_of_speech}</span> : null}
-      {senseCount > 1 ? <span>Meaning {position} of {senseCount}</span> : null}
-      {item.sense_label ? <span>{item.sense_label}</span> : null}
-      {item.pronunciation ? <span className="pronunciation-guide"><b>Sound it out:</b> {item.pronunciation}</span> : null}
+      <div className="sense-badges">
+        {item.part_of_speech ? <span>{item.part_of_speech}</span> : null}
+        {senseCount > 1 ? <span>Meaning {position} of {senseCount}</span> : null}
+        {item.sense_label ? <span>{item.sense_label}</span> : null}
+      </div>
+      {item.pronunciation ? <p className="pronunciation-guide"><b>Sound it out</b><strong>{item.pronunciation}</strong></p> : null}
     </div>
   )
 }
