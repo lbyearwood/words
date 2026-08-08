@@ -23,6 +23,14 @@ const itemSchema = z.object({
   part_of_speech: z.union([z.enum(partOfSpeechValues), z.literal('')]).transform((value) => value || null),
   pronunciation: z.string().trim().max(120).transform((value) => value || null),
   sense_label: z.string().trim().max(120).transform((value) => value || null),
+}).superRefine((item, context) => {
+  if (!/\s/.test(item.term) && !item.pronunciation) {
+    context.addIssue({
+      code: 'custom',
+      path: ['pronunciation'],
+      message: 'Add a sound-it-out pronunciation for a single-word term.',
+    })
+  }
 })
 
 const confidenceClass: Record<ConfidenceStatus, string> = {
@@ -360,9 +368,10 @@ export function CollectionPage() {
                       <div className="collection-card-copy">
                         <SenseMeta item={item} senseCount={group.rows.length} showPronunciation={new Set(group.items.map((sense) => sense.pronunciation).filter(Boolean)).size !== 1} />
                         <p className="sense-meaning">{item.meaning}</p>
+                        <blockquote>{item.example_sentence}</blockquote>
                         <div className="collection-card-meta">
                           <CategoryTags item={item} />
-                          <small><BarChart3 aria-hidden="true" />{item.source === 'user_added' ? 'Personal' : item.difficulty}</small>
+                          <small><BarChart3 aria-hidden="true" />{item.difficulty}</small>
                           <span className={`confidence-status ${confidenceClass[confidence]}`}><i />{confidenceLabel(confidence)}</span>
                         </div>
                       </div>
@@ -394,7 +403,7 @@ export function CollectionPage() {
                 <label>Part of speech<select name="part_of_speech" defaultValue=""><option value="">Not set</option>{partOfSpeechValues.map((value) => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}</select></label>
                 <label>Sense label <small>Optional</small><input name="sense_label" maxLength={120} placeholder="e.g. separate and distinct" /></label>
               </div>
-              <label>Sound it out <small>Single words only, no IPA</small><input name="pronunciation" maxLength={120} placeholder="e.g. dis-CREET" /></label>
+              <label>Sound it out <small>Required for single words, no IPA</small><input name="pronunciation" maxLength={120} placeholder="e.g. dis-CREET" /></label>
               <div className="form-grid">
                 <label>Primary category<select name="primary_category" value={primaryCategory} onChange={(event) => setPrimaryCategory(event.target.value as Category)}>{query.data.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
                 <label>Difficulty<select name="difficulty" defaultValue="intermediate"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></label>

@@ -289,6 +289,7 @@ a.metric-row:hover { background: var(--green-50); }
 .collection-row .sense-meta { padding-right: 4px; }
 .collection-row h2 { font-size: 1.16rem; }
 .collection-row p { margin: 8px 0 0; color: var(--ink); font-size: 0.96rem; line-height: 1.45; }
+.collection-card-copy blockquote { margin: 9px 0 0; color: var(--muted); font-size: .84rem; font-style: italic; line-height: 1.45; }
 .collection-card-copy { min-width: 0; display: flex; flex-direction: column; align-self: stretch; }
 .collection-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: auto; padding-top: 15px; }
 .collection-card-meta small { display: inline-flex; align-items: center; gap: 7px; font-size: .8rem; text-transform: capitalize; }
