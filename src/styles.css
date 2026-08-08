@@ -309,7 +309,7 @@ a.metric-row:hover { background: var(--green-50); }
 .term-family-card .term-pronunciation { color: #4f5b55; font-size: .7em; }
 .term-family-card .meaning-count { min-height: 30px; padding: 5px 10px; font-size: .72rem; }
 .term-family-card .term-family-senses { gap: 10px; padding: 12px; }
-.term-family-card .term-sense-row { min-height: 184px; padding: 16px; border: 1px solid #d2e8db; border-radius: 10px; background: #fff; box-shadow: 0 2px 9px rgba(18, 74, 44, .045); }
+.term-family-card .term-sense-row { min-height: 184px; display: flex; flex-direction: column; gap: 0; padding: 16px; border: 1px solid #d2e8db; border-radius: 10px; background: #fff; box-shadow: 0 2px 9px rgba(18, 74, 44, .045); }
 .term-family-card .term-sense-row + .term-sense-row { border-top: 1px solid #d2e8db; }
 .term-family-card .sense-badges > span { min-height: 28px; padding: 5px 10px; border-color: #96cfaf; background: #f7fcf9; font-size: .72rem; font-weight: 760; }
 .term-family-card .sense-meaning { margin-top: 15px; font-size: .96rem; line-height: 1.4; }
@@ -330,10 +330,12 @@ a.metric-row:hover { background: var(--green-50); }
   padding: 5px 9px;
   border-radius: 7px;
   font-size: .7rem;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
 }
 .term-family-card .collection-card-actions,
-.term-family-card .word-actions { gap: 4px; margin: -3px -3px 0 0; }
+.term-family-card .word-actions { order: -1; align-self: flex-end; gap: 4px; margin: -3px -3px 8px 0; }
 .term-family-card .icon-button { width: 42px; height: 42px; border: 1px solid transparent; background: #f8faf9; }
 .term-family-card .icon-button svg { width: 21px; height: 21px; }
 .term-family-card .icon-button.is-liked { color: #c52d58; border-color: #f8dce5; background: #fff0f4; }
@@ -680,11 +682,11 @@ a.metric-row:hover { background: var(--green-50); }
   .term-family-card .term-pronunciation { font-size: .7em; }
   .term-family-card .meaning-count { min-height: 34px; padding: 5px 11px; font-size: .72rem; }
   .term-family-card .term-family-senses { gap: 12px; padding: 12px; }
-  .term-family-card .term-sense-row { min-height: 0; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 18px 16px; }
+  .term-family-card .term-sense-row { min-height: 0; padding: 18px 16px; }
   .term-family-card .sense-badges > span { min-height: 31px; padding: 5px 11px; font-size: .76rem; }
   .term-family-card .sense-meaning { margin-top: 18px; font-size: 1.06rem; }
   .term-family-card .collection-card-actions,
-  .term-family-card .word-actions { gap: 3px; margin: -5px -5px 0 0; }
+  .term-family-card .word-actions { gap: 3px; margin: -5px -5px 8px 0; }
   .term-family-card .icon-button { width: 40px; height: 40px; }
   .term-family-card .icon-button svg { width: 20px; height: 20px; }
   .term-family-card .collection-card-meta,
