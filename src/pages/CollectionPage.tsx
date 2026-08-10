@@ -1,6 +1,6 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { BarChart3, Bookmark, BookmarkMinus, BookOpenCheck, Check, ChevronDown, CirclePlus, Heart, Play, Search, Sparkles, Tags, ThumbsDown, X } from 'lucide-react'
+import { BarChart3, Bookmark, BookmarkMinus, BookOpenCheck, Check, ChevronDown, CirclePlus, Heart, ListFilter, Play, Search, Sparkles, Tags, ThumbsDown, X } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import { CategoryTags } from '../components/CategoryTags'
@@ -48,6 +48,10 @@ const confidenceLabel = (status: ConfidenceStatus) => {
 
 type CollectionSort = 'recent' | 'alphabetical' | 'reverse-alphabetical' | 'needs-practice'
 type CollectionFilter = 'All' | 'Liked' | 'Disliked' | ConfidenceStatus
+type CollectionStatusFilter = Exclude<CollectionFilter, 'All'>
+type OpenCollectionFilter = 'status' | 'categories' | null
+
+const statusFilterOptions: CollectionStatusFilter[] = ['Liked', 'Disliked', 'New', 'Learning', 'Confident', 'Needs practice']
 
 const confidenceOrder: Record<ConfidenceStatus, number> = {
   'Needs practice': 0,
@@ -63,13 +67,36 @@ export function CollectionPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const [showAdd, setShowAdd] = useState(params.get('add') === 'true')
-  const [filter, setFilter] = useState<CollectionFilter>('All')
+  const [selectedStatuses, setSelectedStatuses] = useState<CollectionStatusFilter[]>([])
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([])
+  const [openFilter, setOpenFilter] = useState<OpenCollectionFilter>(null)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<CollectionSort>('recent')
   const [formError, setFormError] = useState('')
   const [practiceError, setPracticeError] = useState('')
   const [primaryCategory, setPrimaryCategory] = useState<Category>('')
+  const statusFilterRef = useRef<HTMLDivElement>(null)
+  const categoryFilterRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!openFilter) return
+
+    const handleOutsidePointer = (event: PointerEvent) => {
+      const target = event.target as Node
+      const activeFilter = openFilter === 'status' ? statusFilterRef.current : categoryFilterRef.current
+      if (!activeFilter?.contains(target)) setOpenFilter(null)
+    }
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenFilter(null)
+    }
+
+    document.addEventListener('pointerdown', handleOutsidePointer)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointer)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [openFilter])
 
   const refreshCollection = () => Promise.all([
     queryClient.invalidateQueries({ queryKey: ['collection-data', user!.id] }),
@@ -135,25 +162,28 @@ export function CollectionPage() {
   const likedCount = useMemo(() => savedRows.filter((row) => row.collection.is_liked).length, [savedRows])
   const dislikedCount = dislikedRows.length
 
+  const selectedStatusSet = useMemo(() => new Set(selectedStatuses), [selectedStatuses])
+
   const statusFilteredRows = useMemo(() => {
-    if (filter === 'Disliked') return dislikedRows
-    return savedRows.filter((row) => {
-      if (filter === 'All') return true
-      if (filter === 'Liked') return row.collection.is_liked
-      return row.confidence === filter
+    if (!selectedStatusSet.size) return savedRows
+    return collectionRows.filter((row) => {
+      if (selectedStatusSet.has('Disliked') && row.collection.is_disliked) return true
+      if (row.collection.state !== 'saved') return false
+      if (selectedStatusSet.has('Liked') && row.collection.is_liked) return true
+      return selectedStatusSet.has(row.confidence)
     })
-  }, [dislikedRows, filter, savedRows])
+  }, [collectionRows, savedRows, selectedStatusSet])
 
   const selectedCategorySet = useMemo(() => new Set(selectedCategories), [selectedCategories])
   const categoryCounts = useMemo(() => {
     const counts = new Map<Category, number>()
-    for (const { item } of statusFilteredRows) {
+    for (const { item } of collectionRows) {
       for (const category of item.categories) {
         counts.set(category.id, (counts.get(category.id) ?? 0) + 1)
       }
     }
     return counts
-  }, [statusFilteredRows])
+  }, [collectionRows])
 
   const filteredRows = useMemo(() => {
     if (!selectedCategorySet.size) return statusFilteredRows
@@ -172,25 +202,23 @@ export function CollectionPage() {
       .filter((category) => selected.has(category.id))
       .map((category) => category.name) ?? []
   }, [query.data?.categories, selectedCategories])
-  const practiceTabLabel = filter === 'All'
-    ? null
-    : filter === 'Confident'
-      ? 'Mastered Terms'
-      : filter === 'Needs practice'
-        ? 'Needs Practice Terms'
-        : `${filter} Terms`
+  const practiceStatusLabel = selectedStatuses.length
+    ? selectedStatuses.map((status) => `${confidenceLabel(status as ConfidenceStatus)} Terms`).join(', ')
+    : null
   const storedPracticeFocus = [
     'My Collection',
-    practiceTabLabel,
+    practiceStatusLabel,
     selectedCategoryNames.length ? `Categories: ${selectedCategoryNames.join(', ')}` : null,
   ].filter(Boolean).join(' | ')
   const practiceScopeLabel = selectedCategories.length
     ? `${selectedCategories.length} selected ${selectedCategories.length === 1 ? 'category' : 'categories'}`
-    : filter === 'All' ? 'all collection' : filter.toLowerCase()
+    : selectedStatuses.length
+      ? `${selectedStatuses.length} selected ${selectedStatuses.length === 1 ? 'status' : 'statuses'}`
+      : 'all collection'
 
   const practiceMutation = useMutation({
     mutationFn: () => createScopedPracticeAttempt({
-      source: filter === 'Disliked' ? 'recommended' : 'word_bank',
+      source: selectedStatusSet.has('Disliked') ? 'recommended' : 'word_bank',
       requestedLength: 15,
       itemIds: practiceItemIds,
       focusLabel: storedPracticeFocus,
@@ -265,10 +293,17 @@ export function CollectionPage() {
       : [...current, category])
   }
 
+  const toggleStatus = (status: CollectionStatusFilter) => {
+    setSelectedStatuses((current) => current.includes(status)
+      ? current.filter((selected) => selected !== status)
+      : [...current, status])
+  }
+
   const clearFilters = () => {
     setSearch('')
-    setFilter('All')
+    setSelectedStatuses([])
     setSelectedCategories([])
+    setOpenFilter(null)
   }
 
   if (query.isLoading) return <LoadingState label="Opening your collection…" />
@@ -333,29 +368,65 @@ export function CollectionPage() {
 
       <section className="collection-toolbar" aria-label="Collection controls">
         <label className="collection-search"><span className="sr-only">Search your collection</span><Search aria-hidden="true" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search your collection" /></label>
-        <div className="confidence-filters" aria-label="Filter by confidence">
-          {(['All', 'Liked', 'Disliked', 'New', 'Learning', 'Confident', 'Needs practice'] as const).map((status) => {
-            const count = status === 'All' ? savedRows.length : status === 'Liked' ? likedCount : status === 'Disliked' ? dislikedCount : confidenceCounts[status]
-            const label = status === 'New' || status === 'Confident' ? confidenceLabel(status) : status
-            return <button key={status} aria-label={`${label}: ${count}`} className={filter === status ? 'is-active' : ''} onClick={() => setFilter(status)}>{label}</button>
-          })}
+        <div className="collection-checkbox-filter" ref={statusFilterRef}>
+          <button
+            className="collection-filter-trigger"
+            type="button"
+            aria-expanded={openFilter === 'status'}
+            aria-controls="collection-status-menu"
+            onClick={() => setOpenFilter((current) => current === 'status' ? null : 'status')}
+          >
+            <ListFilter aria-hidden="true" />
+            <span>{selectedStatuses.length === 1 ? confidenceLabel(selectedStatuses[0] as ConfidenceStatus) : 'Status'}</span>
+            {selectedStatuses.length ? <strong>{selectedStatuses.length}</strong> : null}
+            <ChevronDown className="category-filter-chevron" aria-hidden="true" />
+          </button>
+          {openFilter === 'status' ? (
+            <fieldset className="collection-filter-menu" id="collection-status-menu">
+              <legend className="sr-only">Filter by status</legend>
+              <header>
+                <div><strong>Status</strong><small>Select one or more</small></div>
+                {selectedStatuses.length ? <button type="button" onClick={() => setSelectedStatuses([])}>Clear</button> : null}
+              </header>
+              <div className="collection-filter-options">
+                {statusFilterOptions.map((status) => {
+                  const count = status === 'Liked' ? likedCount : status === 'Disliked' ? dislikedCount : confidenceCounts[status]
+                  const label = confidenceLabel(status as ConfidenceStatus)
+                  return (
+                    <label className="collection-filter-option" key={status}>
+                      <input type="checkbox" checked={selectedStatusSet.has(status)} onChange={() => toggleStatus(status)} />
+                      <span>{label}</span>
+                      <small>{count}</small>
+                    </label>
+                  )
+                })}
+              </div>
+            </fieldset>
+          ) : null}
         </div>
-        <details className="collection-category-filter">
-          <summary aria-label={`Filter by categories${selectedCategories.length ? `, ${selectedCategories.length} selected` : ''}`}>
+        <div className="collection-checkbox-filter" ref={categoryFilterRef}>
+          <button
+            className="collection-filter-trigger"
+            type="button"
+            aria-expanded={openFilter === 'categories'}
+            aria-controls="collection-category-menu"
+            aria-label={`Filter by categories${selectedCategories.length ? `, ${selectedCategories.length} selected` : ''}`}
+            onClick={() => setOpenFilter((current) => current === 'categories' ? null : 'categories')}
+          >
             <Tags aria-hidden="true" />
             <span>Categories</span>
             {selectedCategories.length ? <strong>{selectedCategories.length}</strong> : null}
             <ChevronDown className="category-filter-chevron" aria-hidden="true" />
-          </summary>
-          <fieldset className="collection-category-menu">
+          </button>
+          {openFilter === 'categories' ? <fieldset className="collection-filter-menu" id="collection-category-menu">
             <legend className="sr-only">Filter by categories</legend>
             <header>
               <div><strong>Categories</strong><small>Select one or more</small></div>
               {selectedCategories.length ? <button type="button" onClick={() => setSelectedCategories([])}>Clear</button> : null}
             </header>
-            <div className="collection-category-options">
+            <div className="collection-filter-options">
               {query.data.categories.map((category) => (
-                <label className="collection-category-option" key={category.id}>
+                <label className="collection-filter-option" key={category.id}>
                   <input
                     type="checkbox"
                     checked={selectedCategorySet.has(category.id)}
@@ -366,8 +437,8 @@ export function CollectionPage() {
                 </label>
               ))}
             </div>
-          </fieldset>
-        </details>
+          </fieldset> : null}
+        </div>
         <label className="collection-sort"><span className="sr-only">Sort collection</span><select value={sort} onChange={(event) => setSort(event.target.value as CollectionSort)}><option value="recent">Recently added</option><option value="alphabetical">A to Z</option><option value="reverse-alphabetical">Z to A</option><option value="needs-practice">Needs practice first</option></select></label>
       </section>
 
@@ -387,7 +458,7 @@ export function CollectionPage() {
       ) : null}
 
       {groupedRows.length ? (
-        <section className="collection-list" aria-label={filter === 'Disliked' ? 'Disliked terms' : 'Saved terms'}>
+        <section className="collection-list" aria-label={selectedStatusSet.has('Disliked') ? 'Filtered collection terms' : 'Saved terms'}>
           {groupedRows.map((group) => {
             const headerRow = group.rows.length === 1 ? group.rows[0] : null
             return (
@@ -423,7 +494,7 @@ export function CollectionPage() {
           })}
         </section>
       ) : (
-        <div className="empty-state"><h2>{filter === 'Liked' ? 'No liked terms yet' : filter === 'Disliked' ? 'No disliked terms' : savedRows.length ? 'No matching terms' : 'No terms here yet'}</h2><p>{filter === 'Liked' ? 'Use the heart on any term to add it to your favourites.' : filter === 'Disliked' ? 'Use the thumbs-down icon on any term you dislike and it will appear here.' : savedRows.length ? 'Try another search, status or category filter.' : 'Save something from the Library or add a term of your own.'}</p>{savedRows.length || filter === 'Disliked' ? <button className="secondary-button" onClick={clearFilters}>Clear filters</button> : null}</div>
+        <div className="empty-state"><h2>{selectedStatusSet.has('Liked') && selectedStatuses.length === 1 ? 'No liked terms yet' : selectedStatusSet.has('Disliked') && selectedStatuses.length === 1 ? 'No disliked terms' : savedRows.length ? 'No matching terms' : 'No terms here yet'}</h2><p>{selectedStatusSet.has('Liked') && selectedStatuses.length === 1 ? 'Use the heart on any term to add it to your favourites.' : selectedStatusSet.has('Disliked') && selectedStatuses.length === 1 ? 'Use the thumbs-down icon on any term you dislike and it will appear here.' : savedRows.length ? 'Try another search, status or category filter.' : 'Save something from the Library or add a term of your own.'}</p>{savedRows.length || selectedStatusSet.has('Disliked') ? <button className="secondary-button" onClick={clearFilters}>Clear filters</button> : null}</div>
       )}
 
       {showAdd ? (
