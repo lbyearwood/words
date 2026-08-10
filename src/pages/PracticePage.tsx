@@ -51,6 +51,7 @@ export function PracticePage() {
       return action
     },
     onSuccess: async (action) => {
+      setError('')
       setPreferenceMessage(action === 'like' ? 'Added to favourites and your Collection.'
         : action === 'unlike' ? 'Removed from favourites.'
           : action === 'dislike' ? 'Marked as disliked. This term will remain available.'
