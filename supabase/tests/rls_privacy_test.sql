@@ -1,5 +1,5 @@
 begin;
-select plan(40);
+select plan(45);
 
 select has_table('public', 'learner_plans', 'learner plans exist');
 select has_table('public', 'learner_categories', 'learner categories exist');
@@ -8,6 +8,7 @@ select has_table('public', 'learning_items', 'learner-owned items exist');
 select has_table('public', 'vocabulary_items', 'vocabulary content exists');
 select has_table('public', 'learning_item_categories', 'learner category mappings exist');
 select has_table('public', 'learner_category_focus', 'temporary focus exists');
+select has_table('public', 'learner_activity_attempt_categories', 'learner attempt category snapshots exist');
 select has_table('private', 'content_review_records', 'private reviews exist');
 select has_table('private', 'personalised_content_manifests', 'idempotent manifests exist');
 select has_table('private', 'assessment_templates', 'future assessment foundation exists');
@@ -72,6 +73,41 @@ select ok((select practice_enabled from public.learning_items where id = (select
 create temporary table max_attempt as
 select public.create_practice_attempt('recommended', 10, '{}', null) result;
 select is((select (result->>'actual_length')::integer from max_attempt), 1, 'short pools cap cleanly');
+select is(
+  (select count(*)::integer
+   from public.learner_activity_attempt_categories
+   where attempt_id = (select (result->>'attempt_id')::uuid from max_attempt)),
+  4,
+  'recommended attempts snapshot all active learner targets'
+);
+
+create temporary table max_category_attempt as
+select public.create_practice_attempt(
+  'category',
+  10,
+  array[(select id::text from public.learner_categories where slug = 'sophisticated_speaker')],
+  null
+) result;
+select is(
+  (select category_id from public.activity_attempts
+   where id = (select (result->>'attempt_id')::uuid from max_category_attempt)),
+  null::text,
+  'learner category IDs are not written to the legacy category foreign key'
+);
+select is(
+  (select focus_label from public.activity_attempts
+   where id = (select (result->>'attempt_id')::uuid from max_category_attempt)),
+  'Sophisticated Speaker',
+  'selected-category attempts retain their readable focus label'
+);
+select is(
+  (select count(*)::integer
+   from public.learner_activity_attempt_categories
+   where attempt_id = (select (result->>'attempt_id')::uuid from max_category_attempt)
+     and learner_category_id = (select id from public.learner_categories where slug = 'sophisticated_speaker')),
+  1,
+  'selected-category attempts snapshot the learner category'
+);
 
 select throws_ok(
   $$ select public.set_category_goals(

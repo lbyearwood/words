@@ -87,19 +87,32 @@ export async function fetchPointsSummary(): Promise<PointsSummary> {
 }
 
 export async function fetchProgressData(): Promise<ProgressData> {
-  const [attemptResult, categoryResult, dashboardResult] = await Promise.all([
+  const [attemptResult, attemptCategoryResult, categoryResult, dashboardResult] = await Promise.all([
     supabase
       .from('activity_attempts')
       .select('id,user_id,source,category_id,source_attempt_id,requested_length,actual_length,status,score,started_at,completed_at,duration_seconds,focus_label,points_earned,point_system_version')
       .eq('status', 'completed')
       .order('completed_at', { ascending: false }),
+    supabase
+      .from('learner_activity_attempt_categories')
+      .select('attempt_id,user_id,learner_category_id,goal_role,goal_weight,created_at'),
     supabase.rpc('get_my_categories'),
     supabase.rpc('get_learning_dashboard'),
   ])
 
   return {
     attempts: unwrap(attemptResult) as ProgressData['attempts'],
-    attemptCategories: [],
+    attemptCategories: (unwrap(attemptCategoryResult) as Array<{
+      attempt_id: string
+      user_id: string
+      learner_category_id: string
+      goal_role: 'primary' | 'supporting' | null
+      goal_weight: number | null
+      created_at: string
+    }>).map(({ learner_category_id, ...mapping }) => ({
+      ...mapping,
+      category_id: learner_category_id,
+    })) as ProgressData['attemptCategories'],
     categories: unwrap(categoryResult) as ProgressData['categories'],
     dashboard: unwrap(dashboardResult) as ProgressData['dashboard'],
   }

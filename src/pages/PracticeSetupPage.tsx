@@ -108,6 +108,7 @@ export function PracticeSetupPage() {
   }
 
   function attemptSourceLabel(attempt: (typeof inProgressAttempts)[number]) {
+    if (attempt.focus_label) return attempt.focus_label
     if (attempt.source === 'recommended') return 'Recommended for you'
     if (attempt.source === 'word_bank') return 'My Collection'
     if (attempt.source === 'missed') return 'Terms I missed'
