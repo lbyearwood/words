@@ -1,5 +1,6 @@
 import type { Session, User } from '@supabase/supabase-js'
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { activateUserQueryCache, clearUserQueryCache, restoreUserQueryCache } from '../lib/queryCache'
 import { supabase } from '../lib/supabase'
 
 interface AuthContextValue {
@@ -16,6 +17,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const applySession = useCallback(async (nextSession: Session | null) => {
+    if (nextSession) {
+      await restoreUserQueryCache(nextSession.user.id)
+      activateUserQueryCache(nextSession.user.id)
+    }
+    setSession(nextSession)
+    setLoading(false)
+  }, [])
+
   useEffect(() => {
     let active = true
     let authEventHandled = false
@@ -23,14 +33,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!active) return
       authEventHandled = true
-      setSession(nextSession)
-      setLoading(false)
+      void applySession(nextSession)
     })
 
     void supabase.auth.getSession().then(({ data: sessionData }) => {
       if (active && !authEventHandled) {
-        setSession(sessionData.session)
-        setLoading(false)
+        void applySession(sessionData.session)
       }
     })
 
@@ -38,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false
       data.subscription.unsubscribe()
     }
-  }, [])
+  }, [applySession])
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -48,15 +56,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signIn(email, password) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw new Error(error.message)
-        setSession(data.session)
-        setLoading(false)
+        await applySession(data.session)
       },
       async signOut() {
+        const userId = session?.user.id
         const { error } = await supabase.auth.signOut()
         if (error) throw new Error(error.message)
+        if (userId) await clearUserQueryCache(userId)
+        setSession(null)
       },
     }),
-    [loading, session],
+    [applySession, loading, session],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

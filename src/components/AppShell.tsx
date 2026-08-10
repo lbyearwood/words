@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { BarChart3, BookOpen, Bookmark, Home, LogOut, PencilLine, Settings, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { useIsFetching } from '@tanstack/react-query'
+import { BarChart3, BookOpen, Bookmark, Home, LogOut, PencilLine, RefreshCw, Settings, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../state/AuthContext'
 import { useSound } from '../state/SoundContext'
 import { Brand } from './Brand'
+import { DataWarmup } from './DataWarmup'
 
 const navigation = [
   { to: '/', label: 'Home', icon: Home },
@@ -19,6 +21,9 @@ export function AppShell() {
   const { signOut } = useAuth()
   const { soundEnabled, setSoundEnabled } = useSound()
   const [showSettings, setShowSettings] = useState(false)
+  const syncingLearnerData = useIsFetching({
+    predicate: (query) => ['collection-data', 'library-data'].includes(String(query.queryKey[0])),
+  }) > 0
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
@@ -35,6 +40,7 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
+      <DataWarmup />
       <aside className="desktop-sidebar">
         <Brand />
         <nav aria-label="Primary navigation">
@@ -76,6 +82,13 @@ export function AppShell() {
           ))}
         </nav>
       </div>
+
+      {syncingLearnerData ? (
+        <div className="background-sync-status" role="status" aria-live="polite">
+          <RefreshCw className="spin" aria-hidden="true" />
+          <span>Synchronising your terms…</span>
+        </div>
+      ) : null}
 
       {showSettings ? (
         <div className="dialog-backdrop settings-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowSettings(false) }}>

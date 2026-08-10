@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import { useAuth } from './AuthContext'
 
 type SoundName = 'correct' | 'incorrect' | 'victory'
@@ -33,13 +33,6 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const activePreferenceKey = preferenceKey(user?.id)
   const soundEnabled = preferenceOverrides[activePreferenceKey]
     ?? localStorage.getItem(activePreferenceKey) !== 'off'
-
-  useEffect(() => {
-    for (const url of Object.values(soundUrls)) {
-      const audio = new Audio(url)
-      audio.preload = 'auto'
-    }
-  }, [])
 
   const setSoundEnabled = useCallback((enabled: boolean) => {
     setPreferenceOverrides((current) => ({ ...current, [activePreferenceKey]: enabled }))

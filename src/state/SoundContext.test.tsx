@@ -42,6 +42,7 @@ describe('SoundProvider', () => {
     const view = render(<SoundProvider><SoundHarness /></SoundProvider>)
 
     expect(screen.getByText('Sound on')).toBeVisible()
+    expect(createdAudio).toHaveLength(0)
     fireEvent.click(screen.getByRole('button', { name: 'Play correct' }))
     expect(createdAudio.at(-1)?.src).toContain('freesound_community-ui_correct_button2-103167.mp3')
     expect(createdAudio.at(-1)?.play).toHaveBeenCalledOnce()

@@ -106,6 +106,18 @@ svg { width: 1.25rem; height: 1.25rem; stroke-width: 1.9; }
 .spin { animation: spin 900ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.background-sync-status { position: fixed; z-index: 60; top: 78px; right: 16px; min-height: 40px; display: inline-flex; align-items: center; gap: 9px; padding: 9px 13px; border: 1px solid #9fd4b7; border-radius: 999px; color: var(--green-900); background: rgba(255,255,255,.96); box-shadow: 0 8px 24px rgba(0,59,31,.14); font-size: .78rem; font-weight: 750; }
+.background-sync-status svg { width: 17px; height: 17px; color: var(--green-700); }
+.home-loading { align-content: start; }
+.home-loading-panel { grid-column: 1 / -1; min-height: 210px; display: grid; grid-template-columns: 124px minmax(0,1fr); align-items: center; gap: 30px; padding: 28px 34px; border: 1px solid #b9deca; border-radius: var(--radius); background: var(--green-50); }
+.home-loading-panel > div { display: grid; gap: 14px; }
+.home-loading-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 18px; padding: 16px; border: 1px solid var(--line-strong); border-radius: var(--radius); }
+.loading-skeleton { display: block; min-height: 58px; overflow: hidden; border-radius: 10px; background: linear-gradient(100deg,#e4eee8 25%,#f6faf8 42%,#e4eee8 60%); background-size: 300% 100%; animation: skeleton-shimmer 1.5s ease-in-out infinite; }
+.loading-skeleton-ring { width: 108px; min-height: 108px; border-radius: 50%; }
+.loading-skeleton.wide { width: min(100%,420px); min-height: 26px; }
+.loading-skeleton.medium { width: min(75%,310px); min-height: 18px; }
+@keyframes skeleton-shimmer { to { background-position: -100% 0; } }
+
 .sign-in-page { min-height: 100vh; display: grid; background: #fff; }
 .sign-in-intro { min-height: 290px; padding: 28px 24px 42px; display: flex; flex-direction: column; justify-content: space-between; background: var(--green-50); border-bottom: 1px solid var(--green-100); }
 .sign-in-intro h1 { max-width: 640px; font-size: clamp(2rem, 9vw, 4.6rem); color: var(--green-900); }
@@ -725,6 +737,7 @@ a.metric-row:hover { background: var(--green-50); }
   .progress-hero .hero-action { width: auto; min-width: 280px; min-height: 64px; }
   .home-progress-panel { grid-column: 1 / -1; }
   .metric-list { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .home-loading-metrics { grid-template-columns: repeat(6,minmax(0,1fr)); }
   .metric-row, .metric-row:last-child { grid-column: auto; border-bottom: 0; border-right: 1px solid var(--line-strong); }
   .metric-row:last-child { border-right: 0; }
   .metric-copy strong { font-size: clamp(.95rem, 2vw, 1.35rem); }
@@ -784,6 +797,7 @@ a.metric-row:hover { background: var(--green-50); }
 @media (min-width: 1024px) {
   .app-shell { display: grid; grid-template-columns: 288px minmax(0,1fr); }
   .desktop-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 30px 14px; border-right: 0; background: #004b2c; }
+  .background-sync-status { top: 18px; right: 24px; }
   .desktop-sidebar .brand { color: #fff; }
   .desktop-sidebar nav { display: grid; gap: 7px; margin-top: 52px; }
   .desktop-sidebar nav a, .sidebar-settings, .sidebar-sign-out { min-height: 50px; display: flex; align-items: center; gap: 13px; padding: 0 14px; border: 1px solid rgba(255,255,255,.65); border-radius: 10px; color: var(--green-900); background: #fff; box-shadow: 0 5px 14px rgba(0,26,15,.12); }

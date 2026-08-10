@@ -1,13 +1,28 @@
 import { ArrowRight, BookOpen, Bookmark, RefreshCw, Sparkles, Target, Trophy } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { ErrorState, LoadingState } from '../components/PageState'
+import { ErrorState } from '../components/PageState'
 import { useAppData, useLearningDashboard, usePointsSummary } from '../hooks/useAppData'
 
 export function HomePage() {
   const appQuery = useAppData()
   const learningQuery = useLearningDashboard()
   const pointsQuery = usePointsSummary()
-  if (appQuery.isLoading || learningQuery.isLoading || pointsQuery.isLoading) return <LoadingState />
+  if (appQuery.isLoading || learningQuery.isLoading || pointsQuery.isLoading) {
+    return (
+      <div className="page home-page home-loading" role="status" aria-label="Loading your learning overview">
+        <header className="page-heading home-heading">
+          <div><h1>Welcome back</h1><p>Preparing your latest learning overview…</p></div>
+        </header>
+        <section className="home-loading-panel" aria-hidden="true">
+          <span className="loading-skeleton loading-skeleton-ring" />
+          <div><span className="loading-skeleton wide" /><span className="loading-skeleton medium" /></div>
+        </section>
+        <section className="home-loading-metrics" aria-hidden="true">
+          {Array.from({ length: 6 }, (_, index) => <span className="loading-skeleton" key={index} />)}
+        </section>
+      </div>
+    )
+  }
   if (appQuery.error || !appQuery.data || learningQuery.error || !learningQuery.data || pointsQuery.error || !pointsQuery.data) {
     return <ErrorState message={appQuery.error?.message ?? learningQuery.error?.message ?? pointsQuery.error?.message ?? 'No data found.'} />
   }

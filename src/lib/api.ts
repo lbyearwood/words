@@ -50,9 +50,9 @@ export async function fetchAppData(userId: string): Promise<AppData> {
   }
 }
 
-export async function fetchLibraryData(userId: string): Promise<AppData> {
+export async function fetchLibraryData(userId: string, cachedShell?: AppData): Promise<AppData> {
   const [shell, itemResult] = await Promise.all([
-    fetchAppData(userId),
+    cachedShell ?? fetchAppData(userId),
     supabase.rpc('get_my_library', { p_limit: 2000, p_offset: 0 }),
   ])
   return { ...shell, items: unwrap(itemResult) as KnowledgeItem[] }
