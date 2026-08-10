@@ -51,14 +51,15 @@ export function PracticeSetupPage() {
     requestedSource ? 'start' : params.get('tab') === 'continue' ? 'continue' : 'start',
   )
   const [source, setSource] = useState<PracticeSource>(initialSource)
-  const [category, setCategory] = useState<Category>('general_vocabulary')
+  const [category, setCategory] = useState<Category>('')
   const [count, setCount] = useState(15)
   const [custom, setCustom] = useState(false)
   const [error, setError] = useState('')
 
+  const activeCategory = category || dataQuery.data?.categories[0]?.id || ''
   const counts = countsQuery.data
   const eligibleCount = source === 'category'
-    ? counts?.categories[category] ?? 0
+    ? counts?.categories[activeCategory] ?? 0
     : source === 'attempt_misses'
       ? null
       : counts?.[source] ?? 0
@@ -71,7 +72,7 @@ export function PracticeSetupPage() {
       const result = await createPracticeAttempt({
         source,
         requestedLength: Math.max(10, Math.min(200, Math.round(count))),
-        categoryIds: source === 'category' ? [category] : [],
+        categoryIds: source === 'category' ? [activeCategory] : [],
         sourceAttemptId: source === 'attempt_misses' ? sourceAttemptId : null,
       })
       return result.attempt_id
@@ -92,7 +93,7 @@ export function PracticeSetupPage() {
   }
 
   const categories = dataQuery.data.categories
-  const selectedCategoryName = categories.find((item) => item.id === category)?.name
+  const selectedCategoryName = categories.find((item) => item.id === activeCategory)?.name
   const inProgressAttempts = dataQuery.data.attempts.filter((attempt) => attempt.status === 'in_progress')
   const selectedSource = sourceOptions.find((option) => option.value === source)
   const sourceLabel = source === 'attempt_misses'
@@ -200,7 +201,7 @@ export function PracticeSetupPage() {
             {source === 'category' ? (
               <label className="practice-category-select">
                 Choose a category
-                <select value={category} onChange={(event) => setCategory(event.target.value as Category)}>
+                <select value={activeCategory} onChange={(event) => setCategory(event.target.value as Category)}>
                   {dataQuery.data.categories.map((option) => (
                     <option key={option.id} value={option.id}>{option.name}</option>
                   ))}

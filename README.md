@@ -1,16 +1,11 @@
-# Vocab Express
+# Brain Express
 
 A private, mobile-first vocabulary learning app for Max and Tia.
 
-## Open English WordNet
-
-The local backend can import Open English WordNet 2025 Plus as private candidate data. The archive, generated curation batches, and personal collection import tools are not published in this repository. Raw WordNet content is never shown in the learner Library automatically.
-
-- Source: <https://en-word.net/static/english-wordnet-2025-plus-json.zip>
-- Expected SHA-256: `8832b8fa26a14c0ba8c99bb1ef8db6f9e122a6d9193b65ca9e0ef572580fee7e`
-- Licence: [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/)
-
-The private curation tooling remains in the local development workspace.
+Max and Tia each have a learner-owned curriculum, category set, content wording
+and learning history. There is no shared WordNet catalogue. Reviewed content is
+maintained in deterministic personalised manifests of at most 50 items; see
+[`content/personalised/README.md`](content/personalised/README.md).
 
 ## Local development
 

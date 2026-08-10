@@ -2,9 +2,9 @@ import { Brain } from 'lucide-react'
 
 export function Brand() {
   return (
-    <div className="brand" aria-label="Vocab Express">
+    <div className="brand" aria-label="Brain Express">
       <Brain className="brand-mark" aria-hidden="true" strokeWidth={2.6} />
-      <span>Vocab Express</span>
+      <span>Brain Express</span>
     </div>
   )
 }

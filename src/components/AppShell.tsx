@@ -81,7 +81,7 @@ export function AppShell() {
         <div className="dialog-backdrop settings-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowSettings(false) }}>
           <section className="dialog-panel settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
             <header>
-              <div><h2 id="settings-title">Settings</h2><p>Choose how Vocab Express responds while you practise.</p></div>
+              <div><h2 id="settings-title">Settings</h2><p>Choose how Brain Express responds while you practise.</p></div>
               <button type="button" className="icon-button" aria-label="Close settings" data-tooltip="Close" onClick={() => setShowSettings(false)}><X aria-hidden="true" /></button>
             </header>
             <div className="sound-setting-row">

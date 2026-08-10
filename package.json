@@ -16,15 +16,7 @@
     "supabase:reset": "supabase db reset",
     "supabase:test": "supabase test db",
     "supabase:types": "supabase gen types typescript --local > src/lib/database.types.ts",
-    "wordnet:inspect": "node scripts/wordnet.mjs inspect",
-    "wordnet:import": "node scripts/wordnet.mjs import",
-    "wordnet:verify": "node scripts/wordnet.mjs verify",
-    "wordnet:search": "node scripts/wordnet.mjs search",
-    "wordnet:curation-next": "node scripts/wordnet.mjs curation-next",
-    "wordnet:validate-manifest": "node scripts/wordnet.mjs validate-manifest",
-    "wordnet:add-to-library": "node scripts/wordnet.mjs add-to-library",
-    "wordnet:curation-status": "node scripts/wordnet.mjs curation-status",
-    "wordnet:miscellaneous-report": "node scripts/wordnet.mjs miscellaneous-report"
+    "content:validate": "node tooling/personalised-content/validate-manifest.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.112.1",
@@ -43,7 +35,6 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.0.5",
-    "adm-zip": "0.6.0",
     "eslint": "10.8.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.3",

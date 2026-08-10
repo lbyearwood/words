@@ -853,3 +853,16 @@ a.metric-row:hover { background: var(--green-50); }
   .confetti-celebration { display: none; }
   *, *::before, *::after { scroll-behavior: auto!important; animation-duration: .01ms!important; transition-duration: .01ms!important; }
 }
+.review-status-badge {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid #d7a700;
+  border-radius: 999px;
+  background: #fff8d8;
+  color: #674f00;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}

@@ -4,6 +4,8 @@ import type { AppData, ItemCategory, KnowledgeItem } from './types'
 
 const professionalCategory: ItemCategory = {
   id: 'professional_communication',
+  slug: 'professional_communication',
+  user_id: 'learner-one',
   name: 'Professional Communication',
   description: null,
   sort_order: 4,
@@ -13,6 +15,8 @@ const professionalCategory: ItemCategory = {
 
 const items: KnowledgeItem[] = Array.from({ length: 20 }, (_, index) => ({
   id: String(index),
+  learning_item_id: String(index),
+  source_knowledge_item_id: `source-${index}`,
   term_family_id: `family-${index}`,
   term: `Word ${index}`,
   meaning: `Meaning ${index}`,
@@ -22,6 +26,11 @@ const items: KnowledgeItem[] = Array.from({ length: 20 }, (_, index) => ({
   source: 'seeded',
   owner_id: null,
   default_importance: 0.7,
+  item_type: 'vocabulary',
+  origin: 'migrated',
+  qa_status: 'approved',
+  practice_enabled: true,
+  content_version: 1,
   part_of_speech: 'noun',
   pronunciation: null,
   sense_label: null,
@@ -66,6 +75,8 @@ describe('getEligibleItems', () => {
         { ...professionalCategory, is_primary: false },
         {
           id: 'sophisticated_speaker',
+          slug: 'sophisticated_speaker',
+          user_id: 'learner-one',
           name: 'Sophisticated Speaker',
           description: null,
           sort_order: 23,

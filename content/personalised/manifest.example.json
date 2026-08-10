@@ -1,0 +1,33 @@
+{
+  "manifest_id": "max-batch-001",
+  "user_id": "00000000-0000-4000-8000-000000000000",
+  "batch_number": 1,
+  "items": [
+    {
+      "learning_item_id": "00000000-0000-4000-8000-000000000001",
+      "decision": "rewrite",
+      "reason": "Use the broadly useful workplace sense.",
+      "term": "Alleviate",
+      "definition": "To make a problem or difficult situation less severe.",
+      "example_sentence": "The revised handover process should alleviate pressure on the support team.",
+      "part_of_speech": "verb",
+      "pronunciation": "uh-LEE-vee-ate",
+      "sense_label": "make less severe",
+      "difficulty": "intermediate",
+      "importance": 0.82,
+      "categories": [
+        {
+          "category_id": "00000000-0000-4000-8000-000000000002",
+          "is_primary": true,
+          "importance": 0.9
+        }
+      ],
+      "evidence": [
+        {
+          "type": "learner_fit",
+          "note": "Natural leadership and team-performance usage."
+        }
+      ]
+    }
+  ]
+}

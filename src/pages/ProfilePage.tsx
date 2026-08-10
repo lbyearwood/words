@@ -35,7 +35,7 @@ import { supabase } from '../lib/supabase'
 import type { Category, CategoryGoal, CategoryRecord, Difficulty } from '../lib/types'
 import { useAuth } from '../state/AuthContext'
 
-const suggestedCategoryIds: Category[] = [
+const suggestedCategorySlugs = [
   'general_vocabulary',
   'sophisticated_speaker',
   'critical_thinking_logic',
@@ -98,10 +98,11 @@ function GoalFields({ categories, goals }: { categories: CategoryRecord[]; goals
     }
     if (showAll) return availableCategories
 
-    const availableById = new Map(availableCategories.map((category) => [category.id, category]))
-    return [...new Set<Category>([...suggestedCategoryIds, ...supporting])]
-      .map((id) => availableById.get(id))
+    const availableBySlug = new Map(availableCategories.map((category) => [category.slug, category]))
+    const supportingCategories = availableCategories.filter((category) => supporting.includes(category.id))
+    return [...suggestedCategorySlugs.map((slug) => availableBySlug.get(slug)), ...supportingCategories]
       .filter((category) => category !== undefined)
+      .filter((category, index, all) => all.findIndex((candidate) => candidate.id === category.id) === index)
   }, [availableCategories, search, showAll, supporting])
 
   function changePrimary(value: Category | '') {
@@ -166,7 +167,7 @@ function GoalFields({ categories, goals }: { categories: CategoryRecord[]; goals
           <div className="goal-option-grid">
             {visibleCategories.map((category) => {
               const checked = supporting.includes(category.id)
-              const CategoryIcon = categoryIcons[category.id] ?? Tag
+              const CategoryIcon = categoryIcons[category.slug] ?? Tag
               return (
                 <label className="check-option goal-option" key={category.id}>
                   <input
@@ -227,7 +228,7 @@ export function ProfilePage() {
 
   if (query.isLoading) return <LoadingState label="Opening your profile…" />
   if (query.error || !query.data) return <ErrorState message={query.error?.message ?? 'No data found.'} />
-  const { profile, categories, categoryGoals } = query.data
+  const { profile, learnerPlan, categories, categoryGoals } = query.data
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -238,8 +239,20 @@ export function ProfilePage() {
   return (
     <div className="page profile-page">
       <header className="page-heading profile-heading">
-        <div><h1>Profile</h1><p>Shape what Vocab Express puts within easy reach.</p></div>
+        <div><h1>Profile</h1><p>Shape what Brain Express puts within easy reach.</p></div>
       </header>
+
+      <section className="profile-details-panel learning-plan-panel" aria-labelledby="learning-plan-heading">
+        <div>
+          <span className="eyebrow">Your learning plan</span>
+          <h2 id="learning-plan-heading">{learnerPlan.plan_name}</h2>
+          <p>{learnerPlan.objective}</p>
+        </div>
+        <dl>
+          <div><dt>Learning context</dt><dd>{learnerPlan.audience_context}</dd></div>
+          {learnerPlan.curriculum_baseline ? <div><dt>Curriculum</dt><dd>{learnerPlan.curriculum_baseline}</dd></div> : null}
+        </dl>
+      </section>
 
       <form className="profile-form" onSubmit={handleSubmit}>
         <section className="profile-details-panel" aria-labelledby="personal-details-heading">

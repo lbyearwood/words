@@ -5,7 +5,7 @@ import { CategoryTags } from '../components/CategoryTags'
 import { SenseMeta } from '../components/SenseMeta'
 import { TermFamilyHeader } from '../components/TermFamilyHeader'
 import { ErrorState, LoadingState } from '../components/PageState'
-import { useAppData } from '../hooks/useAppData'
+import { useLibraryData } from '../hooks/useAppData'
 import { saveToCollection, setDislikedState, setLikedState } from '../lib/api'
 import { itemHasCategory, type Category, type Difficulty } from '../lib/types'
 import { groupKnowledgeItems } from '../lib/termFamilies'
@@ -13,7 +13,7 @@ import { useAuth } from '../state/AuthContext'
 
 type LibrarySort = 'alphabetical' | 'reverse-alphabetical' | 'difficulty-ascending' | 'difficulty-descending'
 
-const quickCategoryIds: Category[] = [
+const quickCategorySlugs = [
   'general_vocabulary',
   'sophisticated_speaker',
   'professional_communication',
@@ -27,7 +27,7 @@ const difficultyRank: Record<Difficulty, number> = {
 
 export function LibraryPage() {
   const { user } = useAuth()
-  const query = useAppData()
+  const query = useLibraryData()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<'all' | Category>('all')
@@ -36,24 +36,23 @@ export function LibraryPage() {
 
   const collectionMutation = useMutation({
     mutationFn: (itemId: string) => saveToCollection(user!.id, itemId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-data', user!.id] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library-data', user!.id] }),
   })
   const likeMutation = useMutation({
     mutationFn: ({ itemId, isLiked }: { itemId: string; isLiked: boolean }) =>
       setLikedState(user!.id, itemId, isLiked),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-data', user!.id] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library-data', user!.id] }),
   })
   const dislikeMutation = useMutation({
     mutationFn: ({ itemId, isDisliked }: { itemId: string; isDisliked: boolean }) =>
       setDislikedState(user!.id, itemId, isDisliked),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-data', user!.id] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library-data', user!.id] }),
   })
 
   const filtered = useMemo(() => {
     if (!query.data) return []
     const needle = search.trim().toLocaleLowerCase()
     const items = query.data.items
-      .filter((item) => item.source === 'seeded')
       .filter((item) => category === 'all' || itemHasCategory(item, category))
       .filter((item) => difficulty === 'all' || item.difficulty === difficulty)
       .filter((item) => !needle || [
@@ -102,8 +101,8 @@ export function LibraryPage() {
       </div>
     )
   }
-  const quickCategories = quickCategoryIds
-    .map((id) => query.data.categories.find((option) => option.id === id))
+  const quickCategories = quickCategorySlugs
+    .map((slug) => query.data.categories.find((option) => option.slug === slug))
     .filter((option) => option !== undefined)
 
   return (
@@ -195,6 +194,7 @@ export function LibraryPage() {
                     <div className="word-copy">
                       <div className="word-title-line">
                         <SenseMeta item={item} senseCount={group.items.length} showPronunciation={new Set(group.items.map((sense) => sense.pronunciation).filter(Boolean)).size !== 1} />
+                        {item.qa_status === 'pending' ? <span className="review-status-badge">Review pending</span> : null}
                       </div>
                       <p className="sense-meaning">{item.meaning}</p>
                       <blockquote>{item.example_sentence}</blockquote>

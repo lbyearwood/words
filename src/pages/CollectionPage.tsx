@@ -9,7 +9,7 @@ import { TermFamilyHeader } from '../components/TermFamilyHeader'
 import { ErrorState, LoadingState } from '../components/PageState'
 import { useCollectionData } from '../hooks/useAppData'
 import { createPersonalItem, createScopedPracticeAttempt, removeFromCollection, saveToCollection, setDislikedState, setLikedState } from '../lib/api'
-import { categoryIds, partOfSpeechValues, type Category, type ConfidenceStatus } from '../lib/types'
+import { partOfSpeechValues, type Category, type ConfidenceStatus } from '../lib/types'
 import { groupKnowledgeItems } from '../lib/termFamilies'
 import { useAuth } from '../state/AuthContext'
 
@@ -17,8 +17,8 @@ const itemSchema = z.object({
   term: z.string().trim().min(1, 'Add a term.').max(160),
   meaning: z.string().trim().min(1, 'Add a plain-English meaning.').max(600),
   example: z.string().trim().min(1, 'Add an example sentence.').max(800),
-  primary_category: z.enum(categoryIds),
-  secondary_categories: z.array(z.enum(categoryIds)),
+  primary_category: z.string().uuid(),
+  secondary_categories: z.array(z.string().uuid()),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
   part_of_speech: z.union([z.enum(partOfSpeechValues), z.literal('')]).transform((value) => value || null),
   pronunciation: z.string().trim().max(120).transform((value) => value || null),
@@ -69,11 +69,12 @@ export function CollectionPage() {
   const [sort, setSort] = useState<CollectionSort>('recent')
   const [formError, setFormError] = useState('')
   const [practiceError, setPracticeError] = useState('')
-  const [primaryCategory, setPrimaryCategory] = useState<Category>('general_vocabulary')
+  const [primaryCategory, setPrimaryCategory] = useState<Category>('')
 
   const refreshCollection = () => Promise.all([
     queryClient.invalidateQueries({ queryKey: ['collection-data', user!.id] }),
     queryClient.invalidateQueries({ queryKey: ['app-data', user!.id] }),
+    queryClient.invalidateQueries({ queryKey: ['library-data', user!.id] }),
     queryClient.invalidateQueries({ queryKey: ['practice-setup-counts', user!.id] }),
   ])
 
@@ -161,7 +162,10 @@ export function CollectionPage() {
     )
   }, [selectedCategorySet, statusFilteredRows])
 
-  const practiceItemIds = useMemo(() => filteredRows.map((row) => row.item.id), [filteredRows])
+  const practiceItemIds = useMemo(
+    () => filteredRows.filter((row) => row.item.practice_enabled).map((row) => row.item.id),
+    [filteredRows],
+  )
   const selectedCategoryNames = useMemo(() => {
     const selected = new Set(selectedCategories)
     return query.data?.categories
@@ -269,6 +273,10 @@ export function CollectionPage() {
 
   if (query.isLoading) return <LoadingState label="Opening your collection…" />
   if (query.error || !query.data) return <ErrorState message={query.error?.message ?? 'No data found.'} />
+  const activePrimaryCategory = primaryCategory
+    || query.data.categories.find((category) => category.slug === 'general_vocabulary')?.id
+    || query.data.categories[0]?.id
+    || ''
 
   async function handleAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -396,6 +404,7 @@ export function CollectionPage() {
                     <section className="term-sense-row" key={item.id} aria-busy={isUpdating}>
                       <div className="collection-card-copy">
                         <SenseMeta item={item} senseCount={group.rows.length} showPronunciation={new Set(group.items.map((sense) => sense.pronunciation).filter(Boolean)).size !== 1} />
+                        {item.qa_status === 'pending' ? <span className="review-status-badge">Review pending</span> : null}
                         <p className="sense-meaning">{item.meaning}</p>
                         <blockquote>{item.example_sentence}</blockquote>
                         <CategoryTags item={item} />
@@ -431,7 +440,7 @@ export function CollectionPage() {
               </div>
               <label>Sound it out <small>Required for single words, no IPA</small><input name="pronunciation" maxLength={120} placeholder="e.g. dis-CREET" /></label>
               <div className="form-grid">
-                <label>Primary category<select name="primary_category" value={primaryCategory} onChange={(event) => setPrimaryCategory(event.target.value as Category)}>{query.data.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+                <label>Primary category<select name="primary_category" value={activePrimaryCategory} onChange={(event) => setPrimaryCategory(event.target.value as Category)}>{query.data.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
                 <label>Difficulty<select name="difficulty" defaultValue="intermediate"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></label>
               </div>
               <fieldset className="secondary-category-options">
@@ -444,7 +453,7 @@ export function CollectionPage() {
                         type="checkbox"
                         name="secondary_categories"
                         value={category.id}
-                        disabled={category.id === primaryCategory}
+                        disabled={category.id === activePrimaryCategory}
                       />
                       <span>{category.name}</span>
                     </label>

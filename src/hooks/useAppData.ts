@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchAppData, fetchCollectionData, fetchLearningDashboard, fetchPointsSummary, fetchPracticeSetupCounts, fetchProgressData } from '../lib/api'
+import { fetchAppData, fetchCollectionData, fetchLearningDashboard, fetchLibraryData, fetchPointsSummary, fetchPracticeSetupCounts, fetchProgressData } from '../lib/api'
 import { useAuth } from '../state/AuthContext'
 
 export function useAppData() {
@@ -7,6 +7,15 @@ export function useAppData() {
   return useQuery({
     queryKey: ['app-data', user?.id],
     queryFn: () => fetchAppData(user!.id),
+    enabled: Boolean(user),
+  })
+}
+
+export function useLibraryData() {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['library-data', user?.id],
+    queryFn: () => fetchLibraryData(user!.id),
     enabled: Boolean(user),
   })
 }

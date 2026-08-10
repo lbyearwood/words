@@ -1,35 +1,4 @@
-export const categoryIds = [
-  'general_vocabulary',
-  'critical_thinking_logic',
-  'academic_language_writing',
-  'professional_communication',
-  'education_learning',
-  'research_methods_evidence',
-  'social_communication',
-  'beliefs_spirituality',
-  'biology_life_sciences',
-  'emotions_relationships',
-  'philosophy_ethics',
-  'mathematics_statistics',
-  'health_medicine',
-  'psychology_behaviour',
-  'law_civic_life',
-  'culture_social_norms',
-  'literature_rhetoric',
-  'society_politics',
-  'language_linguistics',
-  'physics_engineering',
-  'personal_development_wellbeing',
-  'business_economics',
-  'sophisticated_speaker',
-  'leadership_management',
-  'phrases',
-  'quotes',
-  'idioms',
-  'miscellaneous',
-] as const
-
-export type Category = (typeof categoryIds)[number]
+export type Category = string
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced'
 export type CollectionState = 'saved' | 'preference'
 export type ConfidenceStatus = 'New' | 'Learning' | 'Confident' | 'Needs practice'
@@ -50,6 +19,8 @@ export type PartOfSpeech = (typeof partOfSpeechValues)[number]
 
 export interface CategoryRecord {
   id: Category
+  slug: string
+  user_id: string
   name: string
   description: string | null
   sort_order: number
@@ -71,6 +42,8 @@ export interface Profile {
 
 export interface KnowledgeItem {
   id: string
+  learning_item_id: string
+  source_knowledge_item_id: string
   term_family_id: string
   term: string
   meaning: string
@@ -83,6 +56,11 @@ export interface KnowledgeItem {
   source: 'seeded' | 'user_added'
   owner_id: string | null
   default_importance: number
+  item_type: 'vocabulary'
+  origin: 'migrated' | 'curated' | 'user_created'
+  qa_status: 'pending' | 'approved' | 'excluded'
+  practice_enabled: boolean
+  content_version: number
   categories: ItemCategory[]
 }
 
@@ -98,6 +76,20 @@ export interface CategoryGoal {
   category_id: Category
   goal_role: 'primary' | 'supporting'
   goal_weight: number
+}
+
+export interface LearnerPlan {
+  user_id: string
+  plan_name: string
+  objective: string
+  audience_context: string
+  curriculum_baseline: string | null
+  locale: string
+}
+
+export interface LearnerPlanResponse {
+  plan: LearnerPlan
+  focus: CategoryGoal[]
 }
 
 export interface UserCollection {
@@ -258,6 +250,7 @@ export interface ProgressData {
 
 export interface AppData {
   profile: Profile
+  learnerPlan: LearnerPlan
   categories: CategoryRecord[]
   categoryGoals: CategoryGoal[]
   items: KnowledgeItem[]

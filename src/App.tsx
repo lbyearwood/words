@@ -16,7 +16,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage').then((module) => ({
 
 export function App() {
   const { user, loading } = useAuth()
-  if (loading) return <LoadingState label="Opening Vocab Express…" />
+  if (loading) return <LoadingState label="Opening Brain Express…" />
   if (!user) return <SignInPage />
 
   return (
