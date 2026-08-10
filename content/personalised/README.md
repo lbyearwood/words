@@ -19,3 +19,24 @@ npm run content:validate -- content/personalised/max-batch-001.json
 
 Manifests contain learning content but no credentials. Evidence should explain
 why a definition, example and category fit that learner's permanent plan.
+
+## Completed production review
+
+The initial Two-Learner V2 review was completed on 10 August 2026. The hosted
+database retains the full per-item before/after evidence and content hashes.
+
+| Learner | Batches | Reviewed | Approved | Archived |
+| --- | ---: | ---: | ---: | ---: |
+| Max | 17 | 793 | 764 | 29 |
+| Tia | 7 | 305 | 305 | 0 |
+
+Max's decisions comprise 52 `keep`, 591 `rewrite`, 121 `change_sense` and 29
+`exclude` records. Tia's decisions comprise 255 `keep`, 29 `rewrite` and 21
+`change_sense` records. Archived items remain reversible and are excluded from
+practice and mastery.
+
+Production acceptance checks confirmed zero pending items, placeholder
+examples, missing parts of speech, missing single-word pronunciations,
+duplicate normalised term families, primary-category errors and cross-learner
+category mappings. Rolled-back practice smoke tests generated 15 valid,
+non-duplicated questions for each learner without retaining attempts.
