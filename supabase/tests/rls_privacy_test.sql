@@ -1,5 +1,5 @@
 begin;
-select plan(45);
+select plan(48);
 
 select has_table('public', 'learner_plans', 'learner plans exist');
 select has_table('public', 'learner_categories', 'learner categories exist');
@@ -69,6 +69,29 @@ select is(jsonb_array_length(public.get_my_library()), 1, 'Max library contains 
 select is((public.get_practice_setup_counts()->>'recommended')::integer, 1, 'pending self-added term is immediately testable');
 select is((select qa_status::text from public.learning_items where id = (select id from max_item)), 'pending', 'self-added term remains review pending');
 select ok((select practice_enabled from public.learning_items where id = (select id from max_item)), 'self-added term is practice-enabled');
+
+create temporary table max_liked_item as
+select public.set_learning_item_preference(
+  (select id from max_item), null, true, null
+) result;
+select is(
+  (select result->>'state' from max_liked_item),
+  'saved',
+  'liking a term automatically saves it to the collection'
+);
+select ok(
+  (select (result->>'is_liked')::boolean from max_liked_item),
+  'the preference response confirms the term is liked'
+);
+select is(
+  (select count(*)::integer from public.user_collections
+   where user_id = '10000000-0000-0000-0000-000000000001'
+     and learning_item_id = (select id from max_item)
+     and state = 'saved'
+     and is_liked),
+  1,
+  'the saved and liked state is persisted together'
+);
 
 create temporary table max_attempt as
 select public.create_practice_attempt('recommended', 10, '{}', null) result;
