@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchAppData, fetchCollectionData, fetchLearningDashboard, fetchLibraryData, fetchPointsSummary, fetchPracticeSetupCounts, fetchProgressData } from '../lib/api'
+import { fetchAppData, fetchCollectionData, fetchLearningDashboard, fetchLibraryData, fetchPointsSummary, fetchPracticeSetupCounts, fetchPracticeSetupMultiCount, fetchProgressData } from '../lib/api'
+import type { Category, PracticeSource } from '../lib/types'
 import { useAuth } from '../state/AuthContext'
 
 export function useAppData() {
@@ -44,6 +45,20 @@ export function usePracticeSetupCounts() {
     queryKey: ['practice-setup-counts', user?.id],
     queryFn: fetchPracticeSetupCounts,
     enabled: Boolean(user),
+  })
+}
+
+export function usePracticeSetupMultiCount(
+  sources: PracticeSource[],
+  categoryIds: Category[],
+  sourceAttemptId: string | null,
+  enabled: boolean,
+) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['practice-setup-multi-count', user?.id, [...sources].sort(), [...categoryIds].sort(), sourceAttemptId],
+    queryFn: () => fetchPracticeSetupMultiCount({ sources, categoryIds, sourceAttemptId }),
+    enabled: Boolean(user) && enabled,
   })
 }
 

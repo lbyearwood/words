@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowRight,
   BookOpen,
   Bookmark,
+  ChevronDown,
   Clock3,
   History,
   Info,
   ListChecks,
+  Layers3,
   Puzzle,
   Sparkles,
   Tags,
@@ -15,8 +17,9 @@ import {
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ErrorState, LoadingState } from '../components/PageState'
-import { useAppData, usePracticeSetupCounts } from '../hooks/useAppData'
-import { createPracticeAttempt } from '../lib/api'
+import { useAppData, usePracticeSetupCounts, usePracticeSetupMultiCount } from '../hooks/useAppData'
+import { createPracticeAttemptMulti } from '../lib/api'
+import { practiceSelectionLabel, togglePracticeSource } from '../lib/practiceSelection'
 import type { Category, PracticeSource } from '../lib/types'
 
 const sourceOptions = [
@@ -50,30 +53,63 @@ export function PracticeSetupPage() {
   const [practiceTab, setPracticeTab] = useState<'start' | 'continue'>(
     requestedSource ? 'start' : params.get('tab') === 'continue' ? 'continue' : 'start',
   )
-  const [source, setSource] = useState<PracticeSource>(initialSource)
+  const [sources, setSources] = useState<PracticeSource[]>([initialSource])
+  const [sourceMenuOpen, setSourceMenuOpen] = useState(false)
   const [category, setCategory] = useState<Category>('')
   const [count, setCount] = useState(15)
   const [custom, setCustom] = useState(false)
   const [error, setError] = useState('')
+  const sourcePickerRef = useRef<HTMLDivElement>(null)
 
   const activeCategory = category || dataQuery.data?.categories[0]?.id || ''
+  const selectedSourceSet = useMemo(() => new Set(sources), [sources])
+  const selectedCategoryIds = selectedSourceSet.has('category') && activeCategory ? [activeCategory] : []
+  const multipleSources = sources.length > 1
+  const multiCountQuery = usePracticeSetupMultiCount(
+    sources,
+    selectedCategoryIds,
+    sourceAttemptId,
+    multipleSources,
+  )
   const counts = countsQuery.data
-  const eligibleCount = source === 'category'
-    ? counts?.categories[activeCategory] ?? 0
-    : source === 'attempt_misses'
-      ? null
-      : counts?.[source] ?? 0
+  const onlySource = sources[0]
+  const eligibleCount = multipleSources
+    ? multiCountQuery.data ?? 0
+    : onlySource === 'category'
+      ? counts?.categories[activeCategory] ?? 0
+      : onlySource === 'attempt_misses'
+        ? null
+        : onlySource
+          ? counts?.[onlySource] ?? 0
+          : 0
   const actualCount = eligibleCount === null ? count : Math.min(count, eligibleCount)
   const sessionMinutes = actualCount ? Math.max(1, Math.ceil(actualCount / 3)) : 0
+
+  useEffect(() => {
+    if (!sourceMenuOpen) return
+    const handleOutsidePointer = (event: PointerEvent) => {
+      if (!sourcePickerRef.current?.contains(event.target as Node)) setSourceMenuOpen(false)
+    }
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSourceMenuOpen(false)
+    }
+    document.addEventListener('pointerdown', handleOutsidePointer)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointer)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [sourceMenuOpen])
 
   const startMutation = useMutation({
     mutationFn: async () => {
       if (!dataQuery.data || actualCount === 0) throw new Error('There are no eligible terms in this source yet.')
-      const result = await createPracticeAttempt({
-        source,
+      if (!sources.length) throw new Error('Choose at least one practice source.')
+      const result = await createPracticeAttemptMulti({
+        sources,
         requestedLength: Math.max(10, Math.min(200, Math.round(count))),
-        categoryIds: source === 'category' ? [activeCategory] : [],
-        sourceAttemptId: source === 'attempt_misses' ? sourceAttemptId : null,
+        categoryIds: selectedCategoryIds,
+        sourceAttemptId: selectedSourceSet.has('attempt_misses') ? sourceAttemptId : null,
       })
       return result.attempt_id
     },
@@ -95,16 +131,17 @@ export function PracticeSetupPage() {
   const categories = dataQuery.data.categories
   const selectedCategoryName = categories.find((item) => item.id === activeCategory)?.name
   const inProgressAttempts = dataQuery.data.attempts.filter((attempt) => attempt.status === 'in_progress')
-  const selectedSource = sourceOptions.find((option) => option.value === source)
-  const sourceLabel = source === 'attempt_misses'
-    ? 'Missed from this result'
-    : source === 'category'
-      ? selectedCategoryName ?? 'Selected category'
-      : selectedSource?.label ?? 'Recommended for you'
+  const sourceLabel = practiceSelectionLabel(sources, selectedCategoryName)
 
   function chooseSource(nextSource: PracticeSource) {
-    setSource(nextSource)
+    setSources((current) => togglePracticeSource(current, nextSource))
     setError('')
+  }
+
+  function optionEligibleCount(source: Exclude<PracticeSource, 'attempt_misses'>) {
+    return source === 'category'
+      ? countsQuery.data?.categories[activeCategory] ?? 0
+      : countsQuery.data?.[source] ?? 0
   }
 
   function attemptSourceLabel(attempt: (typeof inProgressAttempts)[number]) {
@@ -170,36 +207,48 @@ export function PracticeSetupPage() {
         <div className="practice-setup-form">
           <section className="setup-section" aria-labelledby="practice-source-heading">
             <h2 id="practice-source-heading">1. Choose what to practise</h2>
-            <div className="source-options" role="radiogroup" aria-label="Practice source">
-              {source === 'attempt_misses' ? (
-                <button
-                  type="button"
-                  className="source-option is-selected is-featured"
-                  role="radio"
-                  aria-checked="true"
-                >
-                  <span className="radio-dot" aria-hidden="true" />
-                  <span className="source-icon"><Clock3 aria-hidden="true" /></span>
-                  <span><strong>Missed from this result</strong><small>Revisit the exact terms missed in that practice.</small></span>
-                </button>
+            <div className="practice-source-picker" ref={sourcePickerRef}>
+              <button
+                className="practice-source-trigger"
+                type="button"
+                aria-expanded={sourceMenuOpen}
+                aria-controls="practice-source-menu"
+                onClick={() => setSourceMenuOpen((current) => !current)}
+              >
+                <Layers3 aria-hidden="true" />
+                <span><strong>{sourceLabel}</strong><small>{multipleSources ? `${sources.length} sources selected` : 'Select one or more practice sources'}</small></span>
+                {sources.length ? <b>{sources.length}</b> : null}
+                <ChevronDown aria-hidden="true" />
+              </button>
+              {sourceMenuOpen ? (
+                <fieldset className="practice-source-menu" id="practice-source-menu">
+                  <legend className="sr-only">Choose practice sources</legend>
+                  <header>
+                    <div><strong>Practice sources</strong><small>Select one or more</small></div>
+                    {sources.length ? <button type="button" onClick={() => { setSources([]); setError('') }}>Clear</button> : null}
+                  </header>
+                  <div className="practice-source-options">
+                    {selectedSourceSet.has('attempt_misses') ? (
+                      <label className="practice-source-option">
+                        <input type="checkbox" checked onChange={() => chooseSource('attempt_misses')} />
+                        <span className="practice-source-option-icon"><Clock3 aria-hidden="true" /></span>
+                        <span className="practice-source-option-copy"><strong>Missed from this result</strong><small>Revisit the exact terms missed in that practice.</small></span>
+                      </label>
+                    ) : null}
+                    {sourceOptions.map(({ value, label, copy, icon: Icon }) => (
+                      <label className="practice-source-option" key={value}>
+                        <input type="checkbox" checked={selectedSourceSet.has(value)} onChange={() => chooseSource(value)} />
+                        <span className="practice-source-option-icon"><Icon aria-hidden="true" /></span>
+                        <span className="practice-source-option-copy"><strong>{label}</strong><small>{copy}</small></span>
+                        <b>{optionEligibleCount(value)}</b>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               ) : null}
-              {sourceOptions.map(({ value, label, copy, icon: Icon }, index) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={`source-option${source === value ? ' is-selected' : ''}${index === 0 ? ' is-featured' : ''}`}
-                  role="radio"
-                  aria-checked={source === value}
-                  onClick={() => chooseSource(value)}
-                >
-                  <span className="radio-dot" aria-hidden="true" />
-                  <span className="source-icon"><Icon aria-hidden="true" /></span>
-                  <span><strong>{label}</strong><small>{copy}</small></span>
-                </button>
-              ))}
             </div>
 
-            {source === 'category' ? (
+            {selectedSourceSet.has('category') ? (
               <label className="practice-category-select">
                 Choose a category
                 <select value={activeCategory} onChange={(event) => setCategory(event.target.value as Category)}>
@@ -272,16 +321,19 @@ export function PracticeSetupPage() {
           <div className="eligibility-note" aria-live="polite">
             <Info aria-hidden="true" />
             <span>
-              {eligibleCount === null
+              {multiCountQuery.isLoading
+                ? 'Calculating the combined term poolâ€¦'
+                : eligibleCount === null
                 ? 'Each missed term from that result is available once.'
                 : <><strong>{eligibleCount}</strong> eligible {eligibleCount === 1 ? 'term' : 'terms'} available{count > eligibleCount && eligibleCount ? ` · session capped at ${eligibleCount}` : ''}</>}
             </span>
           </div>
+          {multiCountQuery.error ? <p className="form-error" role="alert">{multiCountQuery.error.message}</p> : null}
           {error ? <p className="form-error" role="alert">{error}</p> : null}
           <button
             type="button"
             className="primary-button start-practice"
-            disabled={!actualCount || startMutation.isPending}
+            disabled={!actualCount || multiCountQuery.isLoading || startMutation.isPending}
             onClick={() => startMutation.mutate()}
           >
             {startMutation.isPending

@@ -134,6 +134,36 @@ export async function createPracticeAttempt(input: {
   return data as { attempt_id: string; eligible_count: number; actual_length: number; requested_length: number }
 }
 
+export async function createPracticeAttemptMulti(input: {
+  sources: PracticeSource[]
+  requestedLength: number
+  categoryIds?: Category[]
+  sourceAttemptId?: string | null
+}) {
+  const { data, error } = await supabase.rpc('create_practice_attempt_multi', {
+    p_sources: input.sources,
+    p_requested_length: input.requestedLength,
+    p_category_ids: input.categoryIds ?? [],
+    p_source_attempt_id: input.sourceAttemptId ?? null,
+  })
+  if (error) throw new Error(error.message)
+  return data as { attempt_id: string; eligible_count: number; actual_length: number; requested_length: number }
+}
+
+export async function fetchPracticeSetupMultiCount(input: {
+  sources: PracticeSource[]
+  categoryIds?: Category[]
+  sourceAttemptId?: string | null
+}) {
+  const { data, error } = await supabase.rpc('get_practice_setup_count_multi', {
+    p_sources: input.sources,
+    p_category_ids: input.categoryIds ?? [],
+    p_source_attempt_id: input.sourceAttemptId ?? null,
+  })
+  if (error) throw new Error(error.message)
+  return data as number
+}
+
 export async function createScopedPracticeAttempt(input: {
   source: PracticeSource
   requestedLength: number

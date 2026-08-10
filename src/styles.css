@@ -389,19 +389,32 @@ a.metric-row:hover { background: var(--green-50); }
 .practice-setup-form { min-width: 0; }
 .setup-section { margin-bottom: 34px; }
 .setup-section > h2 { margin-bottom: 21px; font-size: 1.2rem; }
-.source-options { display: grid; gap: 20px 14px; }
-.source-option { min-height: 128px; display: grid; grid-template-columns: 22px 40px minmax(0,1fr); align-items: center; gap: 14px; padding: 19px 20px; text-align: left; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: #fff; transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
-.source-option:hover { border-color: #8cbda3; background: #fbfefc; transform: translateY(-1px); }
-.source-option.is-selected { border-color: var(--green-700); background: var(--green-50); box-shadow: inset 0 0 0 1px rgba(0,143,76,.12); }
-.source-option > span:last-child { min-width: 0; display: grid; gap: 5px; }
-.source-option strong { font-size: 1.02rem; line-height: 1.2; }
-.source-option small { color: var(--muted); font-size: .88rem; line-height: 1.4; }
-.source-option.is-featured { min-height: 116px; }
-.source-icon { display: grid; place-items: center; color: #4f5853; }
-.source-icon svg { width: 31px; height: 31px; stroke-width: 1.8; }
-.source-option.is-selected .source-icon { color: var(--green-700); }
-.radio-dot { width: 20px; height: 20px; border: 1.5px solid #aeb8b2; border-radius: 50%; background: #fff; }
-.is-selected .radio-dot { border: 6px solid var(--green-700); }
+.practice-source-picker { position: relative; width: 100%; }
+.practice-source-trigger { width: 100%; min-height: 76px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 13px; padding: 14px 17px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); color: var(--ink); background: #fff; text-align: left; }
+.practice-source-trigger:hover { border-color: #8cbda3; background: #fbfefc; }
+.practice-source-trigger[aria-expanded="true"] { border-color: var(--green-700); box-shadow: 0 0 0 3px rgba(0,143,76,.1); }
+.practice-source-trigger > svg:first-child { width: 28px; height: 28px; color: var(--green-700); }
+.practice-source-trigger > span { min-width: 0; display: grid; gap: 3px; }
+.practice-source-trigger > span strong { font-size: 1rem; }
+.practice-source-trigger > span small { color: var(--muted); font-size: .82rem; font-weight: 500; }
+.practice-source-trigger > b { min-width: 26px; height: 26px; display: grid; place-items: center; padding: 0 7px; border-radius: 999px; color: #fff; background: var(--green-800); font-size: .74rem; }
+.practice-source-trigger > svg:last-child { width: 18px; height: 18px; transition: transform 150ms ease; }
+.practice-source-trigger[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+.practice-source-menu { position: absolute; z-index: 35; top: calc(100% + 8px); left: 0; right: 0; margin: 0; padding: 16px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: #fff; box-shadow: 0 18px 42px rgba(14,41,27,.18); }
+.practice-source-menu > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.practice-source-menu > header > div { display: grid; gap: 2px; }
+.practice-source-menu > header small { color: var(--muted); font-size: .72rem; }
+.practice-source-menu > header button { border: 0; color: var(--green-800); background: transparent; font-size: .78rem; font-weight: 750; }
+.practice-source-options { max-height: min(430px, 60vh); display: grid; gap: 7px; overflow-y: auto; padding-right: 4px; }
+.practice-source-option { min-height: 64px; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 11px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
+.practice-source-option:hover, .practice-source-option:has(input:checked) { border-color: #9fd4b7; background: var(--green-50); }
+.practice-source-option input { width: 19px; height: 19px; min-height: 19px; accent-color: var(--green-700); }
+.practice-source-option-icon { display: grid; place-items: center; color: var(--green-700); }
+.practice-source-option-icon svg { width: 25px; height: 25px; }
+.practice-source-option-copy { min-width: 0; display: grid; gap: 2px; }
+.practice-source-option strong { font-size: .88rem; line-height: 1.2; }
+.practice-source-option small { color: var(--muted); font-size: .76rem; font-weight: 500; line-height: 1.3; }
+.practice-source-option > b { color: var(--muted); font-size: .76rem; }
 .practice-category-select { margin-top: 16px; max-width: 100%; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--green-50); }
 .count-options { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); overflow: hidden; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
 .count-options button { min-width: 0; min-height: 64px; padding: 0 8px; border: 0; border-right: 1px solid var(--line); background: #fff; }
@@ -734,8 +747,6 @@ a.metric-row:hover { background: var(--green-50); }
   .practice-setup-page { max-width: none; }
   .continue-attempt-card { grid-template-columns: 52px minmax(0,1fr) auto; }
   .continue-attempt-button { grid-column: auto; width: auto; min-width: 150px; }
-  .source-options { grid-template-columns: 1fr 1fr; }
-  .source-option.is-featured { grid-column: 1 / -1; }
   .question-page, .results-page { max-width: none; }
   .answer-options { grid-template-columns: 1fr 1fr; }
   .question-next { width: min(100%, 200px); align-self: flex-end; }
@@ -839,8 +850,6 @@ a.metric-row:hover { background: var(--green-50); }
 
 @media (max-width: 440px) {
   .practice-heading { margin-bottom: 32px; }
-  .source-option { min-height: 92px; grid-template-columns: 20px 34px minmax(0,1fr); gap: 11px; padding: 16px 14px; }
-  .source-icon svg { width: 27px; height: 27px; }
   .count-options button { min-height: 52px; padding-inline: 4px; font-size: .9rem; }
   .session-summary { padding: 24px 18px 20px; }
   .session-summary-row { grid-template-columns: 50px minmax(0,1fr); gap: 13px; }
