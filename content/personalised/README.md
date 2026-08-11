@@ -22,15 +22,17 @@ why a definition, example and category fit that learner's permanent plan.
 
 ## Completed production review
 
-The initial Two-Learner V2 review was completed on 10 August 2026. The hosted
-database retains the full per-item before/after evidence and content hashes.
+The initial Two-Learner V2 review was completed on 10 August 2026. Later
+learner-requested additions continue the same audited batch sequence. The
+hosted database retains the full per-item before/after evidence and content
+hashes.
 
 | Learner | Batches | Reviewed | Approved | Archived |
 | --- | ---: | ---: | ---: | ---: |
-| Max | 17 | 793 | 764 | 29 |
+| Max | 18 | 801 | 772 | 29 |
 | Tia | 7 | 305 | 305 | 0 |
 
-Max's decisions comprise 52 `keep`, 591 `rewrite`, 121 `change_sense` and 29
+Max's decisions comprise 60 `keep`, 591 `rewrite`, 121 `change_sense` and 29
 `exclude` records. Tia's decisions comprise 255 `keep`, 29 `rewrite` and 21
 `change_sense` records. Archived items remain reversible and are excluded from
 practice and mastery.
