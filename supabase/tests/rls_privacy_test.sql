@@ -1,5 +1,5 @@
 begin;
-select plan(48);
+select plan(50);
 
 select has_table('public', 'learner_plans', 'learner plans exist');
 select has_table('public', 'learner_categories', 'learner categories exist');
@@ -96,6 +96,16 @@ select is(
 create temporary table max_attempt as
 select public.create_practice_attempt('recommended', 10, '{}', null) result;
 select is((select (result->>'actual_length')::integer from max_attempt), 1, 'short pools cap cleanly');
+select is(
+  (public.get_practice_attempt((select (result->>'attempt_id')::uuid from max_attempt))->'answers'->0->>'pronunciation'),
+  'uh-LEE-vee-ate',
+  'practice questions expose the learner pronunciation'
+);
+select is(
+  (public.get_practice_attempt((select (result->>'attempt_id')::uuid from max_attempt))->'answers'->0->>'correct_answer'),
+  null::text,
+  'unanswered practice questions still hide the correct answer'
+);
 select is(
   (select count(*)::integer
    from public.learner_activity_attempt_categories

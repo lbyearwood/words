@@ -153,6 +153,7 @@ export interface AttemptAnswer {
   is_correct: boolean | null
   answered_at: string | null
   term?: string
+  pronunciation?: string | null
   meaning?: string
   example_sentence?: string
   points_earned: number

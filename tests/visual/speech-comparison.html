@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Read aloud design comparison</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 24px; color: #13261c; background: #edf3ef; font: 600 14px/1.4 Arial, sans-serif; }
+      main { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+      section { padding: 14px; border-radius: 14px; background: white; box-shadow: 0 8px 24px rgba(0, 55, 32, .1); }
+      h1 { margin: 0 0 12px; font-size: 16px; }
+      img { width: 100%; display: block; border: 1px solid #bfd9ca; border-radius: 10px; }
+      .implementation { display: grid; gap: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>Selected option 2</h1>
+        <img src="/artifacts/design-qa/selected-option-2.png" alt="Selected read aloud design" />
+      </section>
+      <section>
+        <h1>Browser-rendered implementation</h1>
+        <div class="implementation">
+          <img src="/artifacts/design-qa/read-aloud-card-desktop.png" alt="Implemented term card" />
+          <img src="/artifacts/design-qa/read-aloud-tooltip-desktop.png" alt="Implemented quiz and yellow tooltip" />
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

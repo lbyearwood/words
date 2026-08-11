@@ -1,4 +1,5 @@
 import type { KnowledgeItem } from '../lib/types'
+import { ReadAloudButton } from './ReadAloudButton'
 
 export function SenseMeta({
   item,
@@ -17,10 +18,7 @@ export function SenseMeta({
         {item.part_of_speech ? <span>{item.part_of_speech}</span> : null}
       </div>
       {showPronunciation && item.pronunciation ? (
-        <p className="pronunciation-guide">
-          <b>Sound it out</b>
-          <strong>{item.pronunciation}</strong>
-        </p>
+        <ReadAloudButton term={item.term} pronunciation={item.pronunciation} className="sense-pronunciation-button" />
       ) : null}
     </div>
   )

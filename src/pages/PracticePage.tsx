@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, Heart, ThumbsDown, XCircle } from 'lucide-react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ErrorState, LoadingState } from '../components/PageState'
+import { ReadAloudButton } from '../components/ReadAloudButton'
 import { fetchCollectionItem, fetchPracticeAttempt, saveToCollection, setDislikedState, setLikedState, submitPracticeAnswer } from '../lib/api'
 import type { AnswerFeedback } from '../lib/types'
 import { useAuth } from '../state/AuthContext'
@@ -128,7 +129,10 @@ export function PracticePage() {
           </div>
         </div>
         {preferenceMessage ? <p className="question-preference-message" role="status">{preferenceMessage}</p> : null}
-        <h1>{current.prompt}</h1>
+        <div className="question-prompt-row">
+          <h1>{current.prompt}</h1>
+          {current.term ? <ReadAloudButton term={current.term} pronunciation={current.pronunciation} /> : null}
+        </div>
         <p>{feedback ? 'Review the answer, then keep going.' : 'Tap one answer'}</p>
         <div className="answer-options">
           {current.options.map((option, optionIndex) => {

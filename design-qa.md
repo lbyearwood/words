@@ -1,56 +1,65 @@
-# Design QA
+# Read-aloud option 2 design QA
 
-## Comparison target
+## Evidence
 
-- Source visual truth: `C:/Users/Max/AppData/Local/Temp/codex-clipboard-56b2f16b-4db9-4932-afb3-64307a76fb41.png`
-- Browser-rendered implementation: `C:/Users/Max/Documents/Development/Word-app/qa-practice-question-desktop-final.png`
-- Combined comparison evidence: `C:/Users/Max/Documents/Development/Word-app/qa-practice-comparison-final.png` (source on the left, implementation on the right)
-- State: authenticated multiple-choice question for “Attentive”, first option selected, answer not submitted.
-
-## Viewport and normalization
-
-- Source image: 842 × 412 pixels at its supplied density.
-- Implementation screenshot: 1440 × 900 pixels at a 1440 × 900 CSS viewport and device scale factor 1.
-- Comparable implementation card crop: 1044 × 475 pixels.
-- Both component images are shown at native resolution in the combined evidence. The implementation is wider because it fills the available application content area; layout proportions and component rhythm were compared rather than forcing a distorted resize.
+- Source visual truth: `C:/Users/Max/Documents/Development/Word-app/artifacts/design-qa/selected-option-2.png`
+- Source pixels: 1487 × 1058
+- Browser-rendered implementation:
+  - Desktop term card: `C:/Users/Max/Documents/Development/Word-app/artifacts/design-qa/read-aloud-card-desktop.png`
+  - Desktop quiz and yellow hover prompt: `C:/Users/Max/Documents/Development/Word-app/artifacts/design-qa/read-aloud-tooltip-desktop.png`
+  - Mobile term card: `C:/Users/Max/Documents/Development/Word-app/artifacts/design-qa/read-aloud-mobile-card.png`
+  - Mobile quiz: `C:/Users/Max/Documents/Development/Word-app/artifacts/design-qa/read-aloud-mobile-quiz.png`
+  - Tablet term card: `C:/Users/Max/Documents/Development/Word-app/artifacts/design-qa/read-aloud-tablet-card.png`
+  - Tablet quiz: `C:/Users/Max/Documents/Development/Word-app/artifacts/design-qa/read-aloud-tablet-quiz.png`
+  - Side-by-side comparison input: `C:/Users/Max/Documents/Development/Word-app/artifacts/design-qa/read-aloud-comparison.png`
+- Browser viewport: 1280 × 720 CSS px at device pixel ratio 1.25; browser captures are 1265 × 712 output pixels.
+- Responsive frames: 390 CSS px mobile iframe and 820 CSS px tablet iframe within the same browser viewport.
+- Density normalization: the side-by-side comparison scales both source and browser captures proportionally in CSS. No pixel-density-only issues were treated as design differences.
+- State: pronunciation visible; quiz read-aloud control hovered; multiple-choice option selected; term actions visible.
 
 ## Full-view comparison evidence
 
-- The implementation reproduces the reference hierarchy: question type and word actions, prompt, helper copy, two-column answer grid, divider, and right-aligned Check answer action.
-- The selected option uses the same pale yellow-green surface, strong double green edge, and solid green letter marker as the reference.
-- The surrounding app navigation remains intact and the question card uses the available desktop width without overflow.
+The combined comparison input shows the selected option 2 and the browser-rendered card and quiz in one image. The implementation retains Brain Express's existing compact three-column card density while matching the selected control's green outlined pill, speaker icon, recognisable pronunciation copy and yellow call-to-action tooltip.
 
-## Focused region comparison evidence
+## Focused-region comparison evidence
 
-- The combined component comparison keeps all typography, option labels, icons, borders, and the primary action readable, so a second focused crop was not necessary.
-- The supplied Lucide bookmark, heart, dislike, and arrow icons match the app’s established icon language and retain accessible button labels.
-- No raster imagery, logos, illustrations, or decorative assets were required for this screen.
-
-## Interaction and responsive checks
-
-- Start New Practice and Continue Practice expose correct tab semantics and switch their tab panels.
-- Continue Practice lists two existing unfinished attempts and resumes the selected attempt at its first unanswered question.
-- Answer selection, Leave practice, and the existing save/favourite/dislike controls remain functional.
-- Mobile at 430 CSS px, tablet at 820 CSS px, and desktop at 1440 CSS px have no horizontal overflow.
-- The bottom navigation and desktop sidebar both display `Practice`.
-- Browser console errors checked: none.
-
-## Findings and comparison history
-
-- Initial P2: the desktop Check answer button was 320 px wide, noticeably larger in proportion than the reference.
-- Fix: reduced the desktop/tablet action width to 200 px while retaining a full-width mobile action.
-- Post-fix evidence: `qa-practice-comparison-final.png` shows the action now matches the reference proportion. No actionable P0, P1, or P2 findings remain.
+- The term header places the read-aloud pill immediately after the clean term title, before the meaning count.
+- The quiz places the same pill with the prompt and keeps bookmark, favourite and dislike controls separate.
+- At 390 px, the prompt wraps above the pill and all controls remain visible with touch-sized targets.
+- At 820 px, answer options remain two columns and the pronunciation pill sits on its own readable line.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: existing app family retained; prompt weight, uppercase question label, helper text, and answer copy match the reference hierarchy and wrapping.
-- Spacing and layout rhythm: card padding, two-column gaps, 74 px answer rows, divider, radii, and footer alignment match the reference.
-- Colours and visual tokens: white card, soft neutral options, green borders, pale selected surface, and dark green primary action align with the visual target.
-- Image quality and asset fidelity: no image assets are present in the target; established vector icons are used at crisp native resolution.
-- Copy and content: the captured prompt and all four options exactly match the source reference. Navigation and page-heading wording match the requested `Practice` terminology.
+- Fonts and typography: existing Brain Express font stack and weights are preserved. The phonetic label uses a compact bold UI weight and remains legible at all three widths.
+- Spacing and layout rhythm: pill padding, icon gap, 10 px radius and wrap behaviour match the chosen direction without disturbing the existing three-card desktop grid.
+- Colors and visual tokens: the control uses the app's green/mint palette; hover uses the established yellow prompt and yellow-soft control state.
+- Image quality and asset fidelity: no raster assets were required. The speaker is the existing Lucide icon library, consistent with the app's bookmark, heart and dislike icons.
+- Copy and content: the visible label is the learner-friendly pronunciation, while the tooltip says `Read term aloud`. The clean term—not the phonetic spelling—is sent to speech synthesis.
 
-## Follow-up polish
+## Interaction and console checks
 
-- The responsive implementation intentionally expands beyond the fixed-width source crop on large desktop screens while preserving the reference proportions.
+- Clicking the quiz pill changed `aria-pressed` to `true` and the tooltip to `Stop reading aloud`.
+- Clicking it again stopped speech and returned `aria-pressed` to `false`.
+- Starting another term cancels and clears the earlier control.
+- Fresh browser load produced no console errors.
+
+## Findings
+
+- No actionable P0, P1 or P2 differences remain.
+- P3: the desktop term-card pill is deliberately more compact than the concept board because Brain Express must continue showing three cards per row.
+
+## Comparison history
+
+- Pass 1: no P0/P1/P2 issues found. Browser checks confirmed the desktop, tablet and mobile arrangements, yellow hover prompt, start state and stop state. No visual fixes were required after the comparison.
+
+## Implementation checklist
+
+- [x] Shared term-card control
+- [x] Multiple-choice and true/false quiz control through the shared question screen
+- [x] British English browser speech
+- [x] Stop/restart and cross-control cancellation
+- [x] Yellow desktop call-to-action prompt
+- [x] Mobile, tablet and desktop responsive checks
+- [x] Keyboard and screen-reader labels
 
 final result: passed

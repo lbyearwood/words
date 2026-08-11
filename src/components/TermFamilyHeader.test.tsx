@@ -9,7 +9,8 @@ describe('TermFamilyHeader', () => {
   it('shows pronunciation and a singular meaning count', () => {
     render(<TermFamilyHeader term="Confer" items={[item('con-FER')]} />)
 
-    expect(screen.getByRole('heading', { name: /Confer/ })).toHaveTextContent('(con-FER)')
+    expect(screen.getByRole('heading', { name: /Confer/ })).toHaveTextContent('con-FER')
+    expect(screen.getByRole('button', { name: 'Read Confer aloud' })).toBeVisible()
     expect(screen.getByText('1 meaning')).toBeVisible()
   })
 
