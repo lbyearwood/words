@@ -29,10 +29,10 @@ hashes.
 
 | Learner | Batches | Reviewed | Approved | Archived |
 | --- | ---: | ---: | ---: | ---: |
-| Max | 19 | 819 | 790 | 29 |
+| Max | 20 | 820 | 791 | 29 |
 | Tia | 7 | 305 | 305 | 0 |
 
-Max's decisions comprise 78 `keep`, 591 `rewrite`, 121 `change_sense` and 29
+Max's decisions comprise 79 `keep`, 591 `rewrite`, 121 `change_sense` and 29
 `exclude` records. Tia's decisions comprise 255 `keep`, 29 `rewrite` and 21
 `change_sense` records. Archived items remain reversible and are excluded from
 practice and mastery.
