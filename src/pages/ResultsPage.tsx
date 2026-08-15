@@ -1,11 +1,15 @@
-import { useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { CheckCircle2, Clock3, RotateCcw, Sparkles, Trophy, XCircle } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Bookmark, BookmarkCheck, CheckCircle2, Clock3, Heart, RotateCcw, Sparkles, Trophy, XCircle } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ConfettiCelebration } from '../components/ConfettiCelebration'
 import { ErrorState, LoadingState } from '../components/PageState'
-import { fetchPracticeAttempt } from '../lib/api'
+import { ReadAloudButton } from '../components/ReadAloudButton'
+import { collectionDataQueryOptions } from '../hooks/useAppData'
+import { fetchPracticeAttempt, saveToCollection, setLikedState } from '../lib/api'
 import { getScoreGrade } from '../lib/results'
+import type { AttemptAnswer, UserCollection } from '../lib/types'
+import { useAuth } from '../state/AuthContext'
 import { useSound } from '../state/SoundContext'
 
 function formatDuration(seconds: number | null) {
@@ -13,10 +17,130 @@ function formatDuration(seconds: number | null) {
   return `${Math.floor(value / 60).toString().padStart(2, '0')}:${(value % 60).toString().padStart(2, '0')}`
 }
 
+type MissedTermAction = 'save' | 'like' | 'unlike'
+
+function MissedTermRow({
+  answer,
+  userId,
+  preference,
+  preferenceLoading,
+  preferenceUnavailable,
+}: {
+  answer: AttemptAnswer
+  userId: string
+  preference: UserCollection | undefined
+  preferenceLoading: boolean
+  preferenceUnavailable: boolean
+}) {
+  const queryClient = useQueryClient()
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const term = answer.term?.trim() || 'This term'
+  const isSaved = preference?.state === 'saved'
+  const isLiked = preference?.is_liked ?? false
+
+  const preferenceMutation = useMutation({
+    mutationFn: async (action: MissedTermAction) => {
+      if (action === 'like' || action === 'unlike') {
+        await setLikedState(userId, answer.knowledge_item_id, action === 'like')
+      } else {
+        await saveToCollection(userId, answer.knowledge_item_id)
+      }
+      return action
+    },
+    onMutate: () => {
+      setMessage('')
+      setError('')
+    },
+    onSuccess: async (action) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['collection-data', userId] }),
+        queryClient.invalidateQueries({ queryKey: ['collection-item', userId, answer.knowledge_item_id] }),
+        queryClient.invalidateQueries({ queryKey: ['app-data', userId] }),
+        queryClient.invalidateQueries({ queryKey: ['library-data', userId] }),
+        queryClient.invalidateQueries({ queryKey: ['practice-setup-counts', userId] }),
+      ])
+      setMessage(action === 'like'
+        ? 'Added to favourites and My Collection.'
+        : action === 'unlike'
+          ? 'Removed from favourites. It remains in My Collection.'
+          : 'Saved in My Collection.')
+    },
+    onError: (caught) => setError(caught instanceof Error ? caught.message : 'Unable to update this term.'),
+  })
+
+  const controlsDisabled = preferenceLoading || preferenceUnavailable || preferenceMutation.isPending
+  const saveTooltip = preferenceLoading
+    ? 'Loading Collection status'
+    : preferenceUnavailable
+      ? 'Collection status unavailable'
+      : isSaved
+        ? 'Saved in My Collection'
+        : 'Add to My Collection'
+  const likeTooltip = preferenceLoading
+    ? 'Loading favourite status'
+    : preferenceUnavailable
+      ? 'Favourite status unavailable'
+      : isLiked
+        ? 'Remove from favourites'
+        : 'Add to favourites'
+
+  return (
+    <article className="missed-term-row" aria-busy={preferenceMutation.isPending}>
+      <XCircle className="missed-term-status-icon" aria-hidden="true" />
+      <div className="missed-term-details">
+        <span className="missed-term-copy">
+          <strong>{term}</strong>
+          <small>{answer.meaning ?? 'Meaning unavailable.'}</small>
+        </span>
+        <div className="missed-term-actions question-item-actions" aria-label={`Actions for ${term}`}>
+          <button
+            type="button"
+            className={`icon-button ${isSaved ? 'is-selected' : ''}`}
+            aria-label={`${isSaved ? 'Saved in My Collection' : 'Add to My Collection'}: ${term}`}
+            aria-pressed={isSaved}
+            data-tooltip={saveTooltip}
+            disabled={controlsDisabled}
+            onClick={() => preferenceMutation.mutate('save')}
+          >
+            {isSaved ? <BookmarkCheck aria-hidden="true" /> : <Bookmark aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            className={`icon-button ${isLiked ? 'is-liked' : ''}`}
+            aria-label={`${isLiked ? 'Remove from favourites' : 'Add to favourites'}: ${term}`}
+            aria-pressed={isLiked}
+            data-tooltip={likeTooltip}
+            disabled={controlsDisabled}
+            onClick={() => preferenceMutation.mutate(isLiked ? 'unlike' : 'like')}
+          >
+            <Heart aria-hidden="true" fill={isLiked ? 'currentColor' : 'none'} />
+          </button>
+          <ReadAloudButton term={term} pronunciation={answer.pronunciation} className="missed-term-read-aloud" />
+        </div>
+        {message ? <p className="question-preference-message missed-term-preference-message" role="status">{message}</p> : null}
+        {error ? <p className="form-error missed-term-preference-error" role="alert">{error}</p> : null}
+      </div>
+    </article>
+  )
+}
+
 export function ResultsPage() {
+  const { user } = useAuth()
   const { attemptId = '' } = useParams()
   const { soundEnabled, playSound } = useSound()
   const query = useQuery({ queryKey: ['practice-attempt', attemptId], queryFn: () => fetchPracticeAttempt(attemptId), enabled: Boolean(attemptId) })
+  const hasMissedTerms = query.data?.answers.some((answer) => answer.is_correct === false) ?? false
+  const collectionQuery = useQuery({
+    ...collectionDataQueryOptions(user?.id ?? ''),
+    enabled: Boolean(user && hasMissedTerms),
+    refetchOnMount: 'always',
+  })
+  const preferenceByItem = useMemo(() => {
+    const preferences = new Map<string, UserCollection>()
+    collectionQuery.data?.collections.forEach((preference) => preferences.set(preference.knowledge_item_id, preference))
+    return preferences
+  }, [collectionQuery.data])
 
   useEffect(() => {
     if (!soundEnabled || query.data?.attempt.status !== 'completed') return
@@ -63,8 +187,18 @@ export function ResultsPage() {
       <section className="missed-section">
         <h2>Terms missed</h2>
         {missed.length ? missed.map((answer) => (
-          <article key={answer.id}><XCircle /><span><strong>{answer.term}</strong><small>{answer.meaning}</small></span></article>
+          <MissedTermRow
+            key={answer.id}
+            answer={answer}
+            userId={user!.id}
+            preference={preferenceByItem.get(answer.knowledge_item_id)}
+            preferenceLoading={collectionQuery.isLoading}
+            preferenceUnavailable={Boolean(collectionQuery.error)}
+          />
         )) : <div className="empty-state compact"><h3>No missed terms</h3><p>You answered every question correctly.</p></div>}
+        {missed.length && collectionQuery.error
+          ? <p className="form-error missed-term-collection-error" role="alert">Collection and favourite controls are temporarily unavailable. Listening still works.</p>
+          : null}
       </section>
       {missed.length ? <Link className="primary-button" to={`/practice?source=attempt_misses&attempt=${attempt.id}`}><RotateCcw /> Practise missed items</Link> : <Link className="primary-button" to="/practice">Keep going</Link>}
       <Link className="text-link" to="/">Back to Home</Link>
